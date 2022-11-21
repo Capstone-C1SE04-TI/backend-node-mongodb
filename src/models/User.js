@@ -66,6 +66,14 @@ const UserSchema = new mongoose.Schema(
 			type: Array,
 			default: []
 		},
+		accessToken: {
+			type: String,
+			default: ""
+		},
+		refreshAccessToken: {
+			type: String,
+			default: ""
+		},
 		createdDate: { type: Object, default: {} },
 		updatedDate: { type: Object, default: {} }
 	},

@@ -68,8 +68,8 @@ router.post("/profile/update", UserController.updateUserProfile);
  *       400:
  *         description: Get user profile failed
  */
-router.get("/profile", UserController.getUserProfile);
-// router.get("/profile", isAuth, UserController.getUserProfile);
+// router.get("/profile", UserController.getUserProfile);
+router.get("/profile", isAuth, UserController.getUserProfile);
 
 /**
  * @swagger

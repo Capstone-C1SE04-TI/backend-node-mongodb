@@ -9,17 +9,18 @@ const {
 	createNewUser,
 	checkExistedUsername,
 	checkExistedEmail,
-	getPasswordByUsername
+	getPasswordByUsername,
+	updateUserAuthorizationByUsername
 } = require("../services/crud-database/user");
 const {
 	isAuthed,
 	generateAccessToken,
-	generateRefreshAccessToken
+	generateRefreshAccessToken,
+	isExpiredAccessToken,
+	handleRefreshAccessToken
 } = require("../services/authentication");
 const { cryptPassword, comparePassword } = require("../helpers");
 const { UserModel } = require("../models");
-
-const TI_AUTH_COOKIE = process.env.TI_AUTH_COOKIE;
 
 function AuthController() {
 	this.signup = async (req, res, next) => {
@@ -82,7 +83,7 @@ function AuthController() {
 				hashPassword,
 				async (error, passwordMatch) => {
 					if (passwordMatch) {
-						const user = await UserModel.find({
+						const user = await UserModel.findOne({
 							username: username
 						}).select("accessToken username userId email -_id");
 
@@ -96,13 +97,10 @@ function AuthController() {
 									username: username
 								});
 
-							// Update tokens in DB
-							await UserModel.findOneAndUpdate(
-								{ username: username },
-								{
-									accessToken: accessToken,
-									refreshAccessToken: refreshAccessToken
-								}
+							await updateUserAuthorizationByUsername(
+								username,
+								accessToken,
+								refreshAccessToken
 							);
 
 							return res.status(200).json({
@@ -121,16 +119,43 @@ function AuthController() {
 
 						// Not first time signin
 						if (await isAuthed(req)) {
-							return res.status(200).json({
-								message: "successfully",
-								error: null,
-								user: {
-									role: "user",
-									username: user.username,
-									userId: user.userId,
-									email: user.email
+							if (await isExpiredAccessToken(req)) {
+								const newTokens =
+									await handleRefreshAccessToken(req);
+
+								if (!newTokens)
+									return res.status(400).json({
+										message: "failed-refresh-token",
+										error: "failed-refresh-token",
+										user: null
+									});
+								else {
+									return res.status(200).json({
+										message: "successfully",
+										error: null,
+										user: {
+											role: "user",
+											username: user.username,
+											userId: user.userId,
+											email: user.email,
+											accessToken: newTokens.accessToken,
+											refreshAccessToken:
+												newTokens.refreshAccessToken
+										}
+									});
 								}
-							});
+							} else {
+								return res.status(200).json({
+									message: "successfully",
+									error: null,
+									user: {
+										role: "user",
+										username: user.username,
+										userId: user.userId,
+										email: user.email
+									}
+								});
+							}
 						} else {
 							return res.status(400).json({
 								message: "failed-unauthorized",

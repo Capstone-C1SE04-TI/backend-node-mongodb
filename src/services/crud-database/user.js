@@ -24,6 +24,38 @@ const getUserByEmail = async (email) => {
 	return await UserModel.findOne({ email: email });
 };
 
+const getUserAuthorizationByUsername = async (username) => {
+	return await UserModel.findOne({ username: username }).select(
+		"accessToken refreshAccessToken -_id"
+	);
+};
+
+const updateUserAuthorizationByUsername = async (
+	username,
+	accessToken,
+	refreshAccessToken
+) => {
+	try {
+		await UserModel.findOneAndUpdate(
+			{ username: username },
+			{
+				$set: {
+					accessToken: accessToken,
+					refreshAccessToken: refreshAccessToken
+				}
+			}
+		)
+			.then((data) => {
+				if (!data) return false;
+			})
+			.catch((error) => false);
+
+		return true;
+	} catch (error) {
+		return false;
+	}
+};
+
 const getUsersLength = async () => {
 	return await UserModel.count({});
 };
@@ -343,10 +375,12 @@ const getGainLossOfCoins = async (isLoss) => {
 module.exports = {
 	getUserByUsername,
 	getUserByEmail,
+	getUserAuthorizationByUsername,
 	getUsersLength,
 	createNewUser,
 	updateUserConfirmationCode,
 	updateUserPassword,
+	updateUserAuthorizationByUsername,
 	checkExistedUsername,
 	checkExistedEmail,
 	checkExistedUserId,
