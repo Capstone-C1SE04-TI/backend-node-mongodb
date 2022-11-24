@@ -120,30 +120,11 @@ function AuthController() {
 						// Not first time signin
 						if (await isAuthed(req)) {
 							if (await isExpiredAccessToken(req)) {
-								const newTokens =
-									await handleRefreshAccessToken(req);
-
-								if (!newTokens)
-									return res.status(400).json({
-										message: "failed-refresh-token",
-										error: "failed-refresh-token",
-										user: null
-									});
-								else {
-									return res.status(200).json({
-										message: "successfully",
-										error: null,
-										user: {
-											role: "user",
-											username: user.username,
-											userId: user.userId,
-											email: user.email,
-											accessToken: newTokens.accessToken,
-											refreshAccessToken:
-												newTokens.refreshAccessToken
-										}
-									});
-								}
+								return res.status(400).json({
+									message: "failed-access-token-expired",
+									error: "failed-access-token-expired",
+									user: null
+								});
 							} else {
 								return res.status(200).json({
 									message: "successfully",
@@ -185,6 +166,36 @@ function AuthController() {
 				.json({ message: "successfully", error: null });
 		} catch (error) {
 			return res.status(400).json({ message: "failed", error: error });
+		}
+	};
+
+	this.refreshAccessToken = async (req, res, next) => {
+		try {
+			const newTokens = await handleRefreshAccessToken(req);
+			const { accessToken, refreshAccessToken } = newTokens;
+
+			if (newTokens) {
+				return res.status(200).json({
+					message: "successfully",
+					error: null,
+					newAccessToken: accessToken,
+					newRefreshAccessToken: refreshAccessToken
+				});
+			} else {
+				return res.status(400).json({
+					message: "failed",
+					error: error,
+					newAccessToken: null,
+					newRefreshAccessToken: null
+				});
+			}
+		} catch (error) {
+			return res.status(400).json({
+				message: "failed",
+				error: error,
+				newAccessToken: null,
+				newRefreshAccessToken: null
+			});
 		}
 	};
 }

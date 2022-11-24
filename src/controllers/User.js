@@ -12,7 +12,7 @@ const {
 const {
 	getUserProfile,
 	updateUserProfile,
-	upgradeUserPremiumAccount,
+	upgradeUserPremiumAccount
 } = require("../services/crud-database/admin");
 const {
 	validateUpdateProfileBody,

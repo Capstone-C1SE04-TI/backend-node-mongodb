@@ -1,25 +1,18 @@
 const dotenv = require("dotenv");
 dotenv.config();
-const { isAuthed } = require("../../services/authentication");
+const {
+	isAuthed,
+	isExpiredAccessToken
+} = require("../../services/authentication");
 
 const isAuth = async (req, res, next) => {
 	try {
 		if (await isAuthed(req, res, next)) {
 			if (await isExpiredAccessToken(req)) {
-				const newTokens = await handleRefreshAccessToken(req);
-
-				if (!newTokens)
-					return res.status(400).json({
-						message: "failed-refresh-token",
-						error: "failed-refresh-token"
-					});
-				else
-					return res.status(200).json({
-						message: "token-expired",
-						error: "token-expired",
-						newAccessToken: newTokens.accessToken,
-						newRefreshAccessToken: newTokens.refreshAccessToken
-					});
+				return res.status(400).json({
+					message: "access-token-expired",
+					error: "access-token-expired"
+				});
 			}
 		} else {
 			return res.status(403).json({

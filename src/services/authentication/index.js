@@ -46,11 +46,10 @@ const generateRefreshAccessToken = async (payloadData) => {
 };
 
 const isExpiredAccessToken = async (req) => {
-	const { accessToken } = req.body;
-	if (!accessToken) return false;
+	const accessTokenHeader = req.headers.authorization;
 
 	const decodeAccessToken = await decodeToken(
-		accessToken,
+		accessTokenHeader,
 		ACCESS_TOKEN_SECRET
 	);
 	if (!decodeAccessToken) return false;
@@ -65,7 +64,7 @@ const isExpiredAccessToken = async (req) => {
 const handleRefreshAccessToken = async (req) => {
 	try {
 		const { username, refreshAccessToken } = req.body;
-		if (!refreshAccessToken) return null;
+		if (!username || !refreshAccessToken) return null;
 
 		const decodeRefreshAccessToken = await decodeToken(
 			refreshAccessToken,
@@ -104,23 +103,19 @@ const handleRefreshAccessToken = async (req) => {
 };
 
 const isAuthed = async (req, res, next) => {
-	const { username, accessToken } = req.body;
-	if (!accessToken) return false;
+	const accessTokenHeader = req.headers.authorization;
+	if (!accessTokenHeader) return false;
 
 	const decodeAccessToken = await decodeToken(
-		accessToken,
+		accessTokenHeader,
 		ACCESS_TOKEN_SECRET
 	);
 	if (!decodeAccessToken) return false;
 
-	const authorizationSaveInDB = await getUserAuthorizationByUsername(
-		username
+	const authorizationInDB = await getUserAuthorizationByUsername(
+		decodeAccessToken.username
 	);
-	if (
-		accessToken !== authorizationSaveInDB.accessToken ||
-		decodeAccessToken.username !== username
-	)
-		return false;
+	if (accessTokenHeader !== authorizationInDB.accessToken) return false;
 
 	return true;
 };

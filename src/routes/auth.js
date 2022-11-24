@@ -90,4 +90,34 @@ router.post("/signin", AuthController.signin);
  */
 router.post("/signout", AuthController.signout);
 
+/**
+ * @swagger
+ * /auth/refresh-access-token:
+ *   post:
+ *     description: Refresh Access Token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - refreshAccessToken
+ *             properties:
+ *               username:
+ *                  type: string
+ *               refreshAccessToken:
+ *                  type: string
+ *             example:
+ *               username: "hieuhn"
+ *               refreshAccessToken: "123abcxyz..."
+ *     responses:
+ *       200:
+ *         description: Refresh access token successfully
+ *       400:
+ *         description: Refresh access token failed
+ */
+router.post("/refresh-access-token", AuthController.refreshAccessToken);
+
 module.exports = router;

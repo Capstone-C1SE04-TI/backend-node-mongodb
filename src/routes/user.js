@@ -48,8 +48,8 @@ const { isAuth } = require("../middlewares/authentication");
  *       400:
  *         description: Update user profile failed
  */
-router.post("/profile/update", UserController.updateUserProfile);
-// router.post("/profile/update", isAuth, UserController.updateUserProfile);
+// router.post("/profile/update", UserController.updateUserProfile);
+router.post("/profile/update", isAuth, UserController.updateUserProfile);
 
 /**
  * @swagger
@@ -107,8 +107,8 @@ router.get("/profile", isAuth, UserController.getUserProfile);
  *       400:
  *         description: Change password failed
  */
-router.post("/change-password", UserController.changePassword);
-// router.post("/change-password", isAuth, UserController.changePassword);
+// router.post("/change-password", UserController.changePassword);
+router.post("/change-password", isAuth, UserController.changePassword);
 
 /**
  * @swagger
@@ -134,12 +134,12 @@ router.post("/change-password", UserController.changePassword);
  *       400:
  *         description: Upgrade premium account failed
  */
-router.post("/upgrade-premium-account", UserController.upgradePremiumAccount);
-// router.post(
-// 	"/upgrade-premium-account",
-// 	isAuth,
-// 	UserController.upgradePremiumAccount,
-// );
+// router.post("/upgrade-premium-account", UserController.upgradePremiumAccount);
+router.post(
+	"/upgrade-premium-account",
+	isAuth,
+	UserController.upgradePremiumAccount
+);
 
 /**
  * @swagger
@@ -169,8 +169,8 @@ router.post("/upgrade-premium-account", UserController.upgradePremiumAccount);
  *       400:
  *         description: Follow shark wallet failed
  */
-router.post("/follow-shark-wallet", UserController.followSharkWallet);
-// router.post("/follow-shark-wallet", isAuth, UserController.followSharkWallet);
+// router.post("/follow-shark-wallet", UserController.followSharkWallet);
+router.post("/follow-shark-wallet", isAuth, UserController.followSharkWallet);
 
 /**
  * @swagger
@@ -200,8 +200,12 @@ router.post("/follow-shark-wallet", UserController.followSharkWallet);
  *       400:
  *         description: Unfollow shark wallet failed
  */
-router.post("/unfollow-shark-wallet", UserController.unfollowSharkWallet);
-// router.post("/unfollow-shark-wallet", isAuth, UserController.unfollowSharkWallet);
+// router.post("/unfollow-shark-wallet", UserController.unfollowSharkWallet);
+router.post(
+	"/unfollow-shark-wallet",
+	isAuth,
+	UserController.unfollowSharkWallet
+);
 
 /**
  * @swagger
@@ -220,7 +224,7 @@ router.post("/unfollow-shark-wallet", UserController.unfollowSharkWallet);
  *       400:
  *         description: Get list of shark followers failed
  */
-router.get("/list-followed-shark", UserController.getSharkFollowed);
-// router.get("/list-followed-shark", isAuth, UserController.getSharkFollowed);
+// router.get("/list-followed-shark", UserController.getSharkFollowed);
+router.get("/list-followed-shark", isAuth, UserController.getSharkFollowed);
 
 module.exports = router;
