@@ -157,7 +157,8 @@ function DisplayController() {
 	};
 
 	this.getSharks = async (req, res, next) => {
-		await getListOfSharks()
+		const {userId} = req.query;
+		await getListOfSharks(userId)
 			.then((datas) =>
 				datas.length === 0
 					? res.status(400).json({

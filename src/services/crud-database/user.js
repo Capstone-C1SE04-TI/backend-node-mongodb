@@ -1,6 +1,3 @@
-const mongoose = require("mongoose");
-const { Types } = mongoose;
-
 const {
 	UserModel,
 	TokenModel,
@@ -9,9 +6,6 @@ const {
 	TransactionModel
 } = require("../../models");
 const {
-	DEFAULT_USER_FULLNAME,
-	DEFAULT_USER_AVATAR,
-	DEFAULT_USER_WEBSITE,
 	QUERY_LIMIT_ITEM,
 	TRENDING_REDUCING_LIMIT_ITEM
 } = require("../../constants");
@@ -67,24 +61,11 @@ const createNewUser = async ({
 	hashPassword
 }) => {
 	try {
-		const usersLength = await getUsersLength();
-		const id = usersLength ? usersLength + 1 : 1;
-
 		const newUserInfo = {
-			_id: new Types.ObjectId(),
-			id: id,
-			userId: id,
 			username: username,
 			email: email,
 			phoneNumber: phoneNumber,
-			password: hashPassword,
-			fullName: DEFAULT_USER_FULLNAME,
-			avatar: DEFAULT_USER_AVATAR,
-			website: DEFAULT_USER_WEBSITE,
-			premiumAccount: false,
-			sharkFollowed: [],
-			createdDate: new Date(),
-			updatedDate: new Date()
+			password: hashPassword
 		};
 
 		await UserModel.create(newUserInfo)
@@ -97,6 +78,14 @@ const createNewUser = async ({
 	} catch (error) {
 		return false;
 	}
+};
+
+const getWalletAddress = async (userId) => {
+	const walletAddress = await UserModel.findOne({
+		userId: userId
+	}).select("walletAddress -_id");
+
+	return walletAddress;
 };
 
 const updateUserConfirmationCode = async (userId, code) => {
@@ -234,12 +223,109 @@ const getSharksLength = async () => {
 	return await SharkModel.count({});
 };
 
-const getListOfSharks = async () => {
+const getListOfSharks = async (userId) => {
 	const sharks = await SharkModel.find({})
 		.sort("id")
-		.select("id walletAddress totalAssets percent24h -_id");
+		.select("id walletAddress totalAssets percent24h followers -_id");
 
-	return sharks;
+	sharksList = sharks.map((shark) => {
+		const isFollowed = shark.followers.includes(userId);
+		let objShark = { ...shark._doc, isFollowed: isFollowed };
+		return objShark;
+	});
+
+	return sharksList;
+};
+
+const followWalletOfShark = async (userId, sharkId) => {
+	try {
+		if (userId === null) return "userid-required";
+		if (userId === undefined) return "userid-invalid";
+
+		if (sharkId === null) return "sharkid-required";
+		if (sharkId === undefined) return "sharkid-invalid";
+
+		if (!(await checkExistedUserId(userId))) return "user-notfound";
+		if (!(await checkExistedSharkId(sharkId))) return "shark-notfound";
+
+		const shark = await SharkModel.findOne({ id: sharkId }).select(
+			"id walletAddress totalAssets percent24h followers -_id"
+		);
+
+		const sharkFollowers = shark.followers;
+
+		if (sharkFollowers && sharkFollowers.some((id) => id === userId))
+			return "already-followed";
+
+		await SharkModel.findOneAndUpdate(
+			{ id: sharkId },
+			{ followers: [...sharkFollowers, userId] },
+			{ new: true }
+		)
+			.then((data) => {
+				if (!data) throw new Error();
+			})
+			.catch((error) => {
+				throw new Error(error);
+			});
+
+		return "success";
+	} catch (error) {
+		return "error";
+	}
+};
+
+const unfollowWalletOfShark = async (userId, sharkId) => {
+	try {
+		if (userId === null) return "userid-required";
+		if (userId === undefined) return "userid-invalid";
+
+		if (sharkId === null) return "sharkid-required";
+		if (sharkId === undefined) return "sharkid-invalid";
+
+		if (!(await checkExistedUserId(userId))) return "user-notfound";
+		if (!(await checkExistedSharkId(sharkId))) return "shark-notfound";
+
+		const shark = await SharkModel.findOne({ id: sharkId }).select(
+			"followers -_id"
+		);
+		let sharkFollowers = shark.followers;
+
+		if (sharkFollowers && !sharkFollowers.some((id) => id === userId))
+			return "not-followed-yet";
+
+		// Remove object has key id === sharkId
+		sharkFollowers = sharkFollowers.filter((id) => id !== userId);
+
+		await SharkModel.findOneAndUpdate(
+			{ id: sharkId },
+			{ followers: sharkFollowers }
+		)
+			.then((data) => {
+				if (!data) throw new Error();
+			})
+			.catch((error) => {
+				throw new Error(error);
+			});
+
+		return "success";
+	} catch (error) {
+		console.log(error);
+		return "error";
+	}
+};
+
+const getListOfSharkFollowed = async (userId) => {
+	if (userId === null) return { message: "userid-required" };
+	if (userId === undefined) return { message: "userid-invalid" };
+	if (!(await checkExistedUserId(userId)))
+		return { message: "user-notfound" };
+
+	const users = await SharkModel.find({ followers: userId }).select(
+		"id totalAssets percent24h -_id"
+	);
+
+	return { message: "success", datas: users || [] };
 };
 
 const getListCryptosOfShark = async (sharkId) => {
@@ -404,5 +490,8 @@ module.exports = {
 	getHoursPriceOfToken,
 	getTransactionsLength,
 	getGainLossOfSharks,
-	getGainLossOfCoins
+	getGainLossOfCoins,
+	getListOfSharkFollowed,
+	followWalletOfShark,
+	unfollowWalletOfShark
 };

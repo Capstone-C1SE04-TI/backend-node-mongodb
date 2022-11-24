@@ -86,6 +86,11 @@ router.get("/coin/details", DisplayController.getCoinOrTokenDetails);
  *   get:
  *     description: Get list of sharks
  *     tags: [Shark]
+ *     parameters:
+ *      - in: query
+ *        name: userId
+ *        schema:
+ *          type: string
  *     responses:
  *       200:
  *         description: Get list of sharks successfully

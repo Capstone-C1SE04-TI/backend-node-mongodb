@@ -4,15 +4,15 @@ const { cryptPassword, comparePassword } = require("../helpers");
 const {
 	getUserByEmail,
 	updateUserPassword,
-	getPasswordByEmail
+	getPasswordByEmail,
+	followWalletOfShark,
+	unfollowWalletOfShark,
+	getListOfSharkFollowed
 } = require("../services/crud-database/user");
 const {
 	getUserProfile,
 	updateUserProfile,
 	upgradeUserPremiumAccount,
-	followWalletOfShark,
-	unfollowWalletOfShark,
-	getListOfSharkFollowed
 } = require("../services/crud-database/admin");
 const {
 	validateUpdateProfileBody,

@@ -1,4 +1,4 @@
-const { body } = require("express-validator");
+const { body, validationResult } = require("express-validator");
 
 const validateUsername = async (req) => {
 	await body("username")
@@ -163,6 +163,14 @@ const validateAvatarOptional = async (req) => {
 		.run(req);
 };
 
+const returnValidationResult = (req) => {
+	const errors = validationResult(req);
+	return {
+		status: errors.isEmpty() ? "successfully" : "failed",
+		error: errors.array()[0]?.msg
+	};
+};
+
 module.exports = {
 	validateUsername,
 	validateEmail,
@@ -177,5 +185,6 @@ module.exports = {
 	validateNewConfirmPassword,
 	validateFullNameOptional,
 	validateWebsiteOptional,
-	validateAvatarOptional
+	validateAvatarOptional,
+	returnValidationResult
 };

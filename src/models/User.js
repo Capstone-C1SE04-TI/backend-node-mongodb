@@ -1,19 +1,8 @@
 const mongoose = require("mongoose");
-const { ObjectId } = mongoose.Schema.Types;
+const AutoIncrement = require("mongoose-sequence")(mongoose);
 
 const UserSchema = new mongoose.Schema(
 	{
-		_id: { type: ObjectId },
-		id: {
-			type: Number,
-			required: true,
-			unique: true
-		},
-		userId: {
-			type: Number,
-			required: true,
-			unique: true
-		},
 		username: {
 			type: String,
 			trim: true,
@@ -62,22 +51,20 @@ const UserSchema = new mongoose.Schema(
 			type: Boolean,
 			default: false
 		},
+		walletAddress: {
+			type: String,
+			trim: true,
+			default: null
+		},
 		sharksFollowed: {
 			type: Array,
 			default: []
-		},
-		accessToken: {
-			type: String,
-			default: ""
-		},
-		refreshAccessToken: {
-			type: String,
-			default: ""
-		},
-		createdDate: { type: Object, default: {} },
-		updatedDate: { type: Object, default: {} }
+		}
 	},
-	{ timestamps: true }
+	{ timestamps: true, versionKey: false }
 );
+
+UserSchema.plugin(AutoIncrement, { inc_field: "id" });
+UserSchema.plugin(AutoIncrement, { inc_field: "userId" });
 
 module.exports = mongoose.model("User", UserSchema);

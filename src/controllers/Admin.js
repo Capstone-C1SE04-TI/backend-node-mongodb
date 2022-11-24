@@ -8,8 +8,8 @@ const {
 	getListOfUsers,
 	getUserProfile
 } = require("../services/crud-database/admin");
-const { validateSignInBody } = require("../validators/admin");
 const { comparePassword } = require("../helpers");
+const { validateSignInBody } = require("../validators/admin");
 
 function AdminController() {
 	this.signin = async (req, res, next) => {

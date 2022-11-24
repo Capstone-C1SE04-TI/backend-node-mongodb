@@ -1,9 +1,7 @@
 const mongoose = require("mongoose");
-const { ObjectId } = mongoose.Schema.Types;
 
 const TransactionSchema = new mongoose.Schema(
 	{
-		_id: { type: ObjectId },
 		sharkId: {
 			type: Number,
 			required: true,
@@ -107,7 +105,7 @@ const TransactionSchema = new mongoose.Schema(
 			trim: true
 		}
 	},
-	{ timestamps: true }
+	{ timestamps: true, versionKey: false }
 );
 
 module.exports = mongoose.model("Transaction", TransactionSchema);
