@@ -6,13 +6,19 @@ const {
 	getListOfAdmins,
 	deleteUsersByUserId,
 	getListOfUsers,
-	getUserProfile
+	getUserProfile,
+	updateAdminAuthorizationByUsername
 } = require("../services/crud-database/admin");
 const {
-	handleRefreshAdminAccessToken
+	handleRefreshAdminAccessToken,
+	generateAdminAccessToken,
+	generateRefreshAdminAccessToken,
+	isAuthedAdmin,
+	isExpiredAdminAccessToken
 } = require("../services/authentication/admin");
 const { comparePassword } = require("../helpers");
 const { validateSignInBody } = require("../validators/admin");
+const { AdminModel } = require("../models");
 
 function AdminController() {
 	this.signin = async (req, res, next) => {
@@ -39,17 +45,69 @@ function AdminController() {
 				hashPassword,
 				async (error, isPasswordMatch) => {
 					if (isPasswordMatch) {
-						const admin = await getAdminByUsername(username);
+						const admin = await AdminModel.findOne({
+							username: username
+						}).select("accessToken username id email -_id");
 
-						return res.status(200).json({
-							message: "successfully",
-							error: null,
-							user: {
-								role: "admin",
-								username: admin.username,
-								email: admin.email
+						// First time signin
+						if (admin.accessToken === "") {
+							const accessToken = await generateAdminAccessToken({
+								username: username,
+								role: "admin"
+							});
+							const refreshAccessToken =
+								await generateRefreshAdminAccessToken({
+									username: username,
+									role: "admin"
+								});
+
+							await updateAdminAuthorizationByUsername(
+								username,
+								accessToken,
+								refreshAccessToken
+							);
+
+							return res.status(200).json({
+								message: "successfully",
+								error: null,
+								user: {
+									role: "admin",
+									id: admin.id,
+									email: admin.email,
+									username: admin.username,
+									accessToken: accessToken,
+									refreshAccessToken: refreshAccessToken
+								}
+							});
+						}
+
+						// Not first time signin
+						if (await isAuthedAdmin(req)) {
+							if (await isExpiredAdminAccessToken(req)) {
+								return res.status(400).json({
+									message: "failed-access-token-expired",
+									error: "failed-access-token-expired",
+									user: null
+								});
+							} else {
+								return res.status(200).json({
+									message: "successfully",
+									error: null,
+									user: {
+										role: "admin",
+										id: admin.id,
+										email: admin.email,
+										username: admin.username
+									}
+								});
 							}
-						});
+						} else {
+							return res.status(400).json({
+								message: "failed-unauthorized",
+								error: "failed-unauthorized",
+								user: null
+							});
+						}
 					} else {
 						return res.status(400).json({
 							message: "incorrect-password",

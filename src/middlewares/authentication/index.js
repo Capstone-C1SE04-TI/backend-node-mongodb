@@ -1,5 +1,6 @@
 const dotenv = require("dotenv");
 dotenv.config();
+
 const {
 	isAuthedUser,
 	isExpiredUserAccessToken
@@ -18,14 +19,13 @@ const isAuth = async (req, res, next) => {
 					error: "access-token-expired"
 				});
 			}
+			next();
 		} else {
 			return res.status(403).json({
 				message: "access-denied unauthorized",
 				error: "access-denied unauthorized"
 			});
 		}
-
-		next();
 	} catch (error) {
 		return res.status(403).json({
 			message: "access-denied unauthorized",
@@ -43,14 +43,13 @@ const isAdmin = async (req, res, next) => {
 					error: "access-token-expired"
 				});
 			}
+			next();
 		} else {
 			return res.status(403).json({
 				message: "access-denied admin-resource",
 				error: "access-denied admin-resource"
 			});
 		}
-
-		next();
 	} catch (e) {
 		return res.status(403).json({
 			message: "access-denied admin-resource",

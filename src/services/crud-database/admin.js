@@ -34,11 +34,9 @@ const updateAdminAuthorizationByUsername = async (
 };
 
 const getListOfAdmins = async () => {
-	const admins = await AdminModel.find({})
+	return await AdminModel.find({})
 		.sort("id")
 		.select("id username email  -_id");
-
-	return admins;
 };
 
 const getListOfUsers = async () => {

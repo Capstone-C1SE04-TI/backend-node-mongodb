@@ -63,15 +63,18 @@ const handleRefreshAdminAccessToken = async (req) => {
 			await getAdminAuthorizationByUsername(username);
 		if (
 			refreshAccessToken !== refreshAccessTokenInDB ||
-			decodeRefreshAccessToken.username !== username
+			decodeRefreshAccessToken.username !== username ||
+			decodeRefreshAccessToken.role !== "admin"
 		)
 			return null;
 
 		const newAccessToken = await generateAdminAccessToken({
-			username: username
+			username: username,
+			role: "admin"
 		});
 		const newRefreshAccessToken = await generateRefreshAdminAccessToken({
-			username: username
+			username: username,
+			role: "admin"
 		});
 
 		await updateAdminAuthorizationByUsername(
@@ -103,6 +106,8 @@ const isAuthedAdmin = async (req, res, next) => {
 		decodeAccessToken.username
 	);
 	if (accessTokenHeader !== authorizationInDB.accessToken) return false;
+
+	if (decodeAccessToken.role !== "admin") return false;
 
 	return true;
 };

@@ -27,6 +27,14 @@ const AdminSchema = new mongoose.Schema(
 			type: String,
 			trim: true,
 			required: true
+		},
+		accessToken: {
+			type: String,
+			default: ""
+		},
+		refreshAccessToken: {
+			type: String,
+			default: ""
 		}
 	},
 	{ versionKey: false }
