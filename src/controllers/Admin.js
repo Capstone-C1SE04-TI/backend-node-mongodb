@@ -8,6 +8,9 @@ const {
 	getListOfUsers,
 	getUserProfile
 } = require("../services/crud-database/admin");
+const {
+	handleRefreshAdminAccessToken
+} = require("../services/authentication/admin");
 const { comparePassword } = require("../helpers");
 const { validateSignInBody } = require("../validators/admin");
 
@@ -69,6 +72,36 @@ function AdminController() {
 				.json({ message: "successfully", error: null });
 		} catch (error) {
 			return res.status(400).json({ message: "failed", error: error });
+		}
+	};
+
+	this.refreshAccessToken = async (req, res, next) => {
+		try {
+			const newTokens = await handleRefreshAdminAccessToken(req);
+			const { accessToken, refreshAccessToken } = newTokens;
+
+			if (newTokens) {
+				return res.status(200).json({
+					message: "successfully",
+					error: null,
+					newAccessToken: accessToken,
+					newRefreshAccessToken: refreshAccessToken
+				});
+			} else {
+				return res.status(400).json({
+					message: "failed",
+					error: error,
+					newAccessToken: null,
+					newRefreshAccessToken: null
+				});
+			}
+		} catch (error) {
+			return res.status(400).json({
+				message: "failed",
+				error: error,
+				newAccessToken: null,
+				newRefreshAccessToken: null
+			});
 		}
 	};
 

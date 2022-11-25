@@ -49,6 +49,36 @@ router.post("/signout", AdminController.signout);
 
 /**
  * @swagger
+ * /admin/refresh-access-token:
+ *   post:
+ *     description: Refresh Access Token
+ *     tags: [Admin]
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - refreshAccessToken
+ *             properties:
+ *               username:
+ *                  type: string
+ *               refreshAccessToken:
+ *                  type: string
+ *             example:
+ *               username: "hieuhn"
+ *               refreshAccessToken: "123abcxyz..."
+ *     responses:
+ *       200:
+ *         description: Refresh access token successfully
+ *       400:
+ *         description: Refresh access token failed
+ */
+router.post("/refresh-access-token", AdminController.refreshAccessToken);
+
+/**
+ * @swagger
  * /admin/list:
  *   get:
  *     description: Get list of admins

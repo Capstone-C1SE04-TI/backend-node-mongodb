@@ -1,14 +1,18 @@
 const dotenv = require("dotenv");
 dotenv.config();
 const {
-	isAuthed,
-	isExpiredAccessToken
-} = require("../../services/authentication");
+	isAuthedUser,
+	isExpiredUserAccessToken
+} = require("../../services/authentication/user");
+const {
+	isAuthedAdmin,
+	isExpiredAdminAccessToken
+} = require("../../services/authentication/admin");
 
 const isAuth = async (req, res, next) => {
 	try {
-		if (await isAuthed(req, res, next)) {
-			if (await isExpiredAccessToken(req)) {
+		if (await isAuthedUser(req, res, next)) {
+			if (await isExpiredUserAccessToken(req)) {
 				return res.status(400).json({
 					message: "access-token-expired",
 					error: "access-token-expired"
@@ -32,12 +36,20 @@ const isAuth = async (req, res, next) => {
 
 const isAdmin = async (req, res, next) => {
 	try {
-		if (req.user.role !== "admin") {
+		if (await isAuthedAdmin(req, res, next)) {
+			if (await isExpiredAdminAccessToken(req)) {
+				return res.status(400).json({
+					message: "access-token-expired",
+					error: "access-token-expired"
+				});
+			}
+		} else {
 			return res.status(403).json({
 				message: "access-denied admin-resource",
 				error: "access-denied admin-resource"
 			});
 		}
+
 		next();
 	} catch (e) {
 		return res.status(403).json({

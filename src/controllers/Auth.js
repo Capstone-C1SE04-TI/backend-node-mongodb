@@ -13,12 +13,12 @@ const {
 	updateUserAuthorizationByUsername
 } = require("../services/crud-database/user");
 const {
-	isAuthed,
-	generateAccessToken,
-	generateRefreshAccessToken,
-	isExpiredAccessToken,
-	handleRefreshAccessToken
-} = require("../services/authentication");
+	isAuthedUser,
+	generateUserAccessToken,
+	generateUserRefreshAccessToken,
+	isExpiredUserAccessToken,
+	handleRefreshUserAccessToken
+} = require("../services/authentication/user");
 const { cryptPassword, comparePassword } = require("../helpers");
 const { UserModel } = require("../models");
 
@@ -89,11 +89,11 @@ function AuthController() {
 
 						// First time signin
 						if (user.accessToken === "") {
-							const accessToken = await generateAccessToken({
+							const accessToken = await generateUserAccessToken({
 								username: username
 							});
 							const refreshAccessToken =
-								await generateRefreshAccessToken({
+								await generateUserRefreshAccessToken({
 									username: username
 								});
 
@@ -118,8 +118,8 @@ function AuthController() {
 						}
 
 						// Not first time signin
-						if (await isAuthed(req)) {
-							if (await isExpiredAccessToken(req)) {
+						if (await isAuthedUser(req)) {
+							if (await isExpiredUserAccessToken(req)) {
 								return res.status(400).json({
 									message: "failed-access-token-expired",
 									error: "failed-access-token-expired",
@@ -171,7 +171,7 @@ function AuthController() {
 
 	this.refreshAccessToken = async (req, res, next) => {
 		try {
-			const newTokens = await handleRefreshAccessToken(req);
+			const newTokens = await handleRefreshUserAccessToken(req);
 			const { accessToken, refreshAccessToken } = newTokens;
 
 			if (newTokens) {

@@ -1,6 +1,38 @@
 const { AdminModel, UserModel } = require("../../models");
 const { checkExistedUserId } = require("./user");
 
+const getAdminAuthorizationByUsername = async (username) => {
+	return await AdminModel.findOne({ username: username }).select(
+		"accessToken refreshAccessToken -_id"
+	);
+};
+
+const updateAdminAuthorizationByUsername = async (
+	username,
+	accessToken,
+	refreshAccessToken
+) => {
+	try {
+		await AdminModel.findOneAndUpdate(
+			{ username: username },
+			{
+				$set: {
+					accessToken: accessToken,
+					refreshAccessToken: refreshAccessToken
+				}
+			}
+		)
+			.then((data) => {
+				if (!data) return false;
+			})
+			.catch((error) => false);
+
+		return true;
+	} catch (error) {
+		return false;
+	}
+};
+
 const getListOfAdmins = async () => {
 	const admins = await AdminModel.find({})
 		.sort("id")
@@ -125,6 +157,8 @@ const deleteUsersByUserId = async (userIds) => {
 };
 
 module.exports = {
+	getAdminAuthorizationByUsername,
+	updateAdminAuthorizationByUsername,
 	getListOfAdmins,
 	getListOfUsers,
 	getUserProfile,
