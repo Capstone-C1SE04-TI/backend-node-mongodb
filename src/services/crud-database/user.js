@@ -48,14 +48,6 @@ const createNewUser = async ({
 	}
 };
 
-const getWalletAddress = async (userId) => {
-	const walletAddress = await UserModel.findOne({
-		userId: userId
-	}).select("walletAddress -_id");
-
-	return walletAddress;
-};
-
 const updateUserConfirmationCode = async (userId, code) => {
 	try {
 		await UserModel.findOneAndUpdate(
@@ -168,12 +160,14 @@ const getListTrendingTokens = async () => {
 };
 
 const getCoinOrTokenDetails = async (coinSymbol) => {
+	coinSymbol = coinSymbol.toLowerCase()
 	const coinOrToken = await TokenModel.findOne({
-		symbol: coinSymbol.toUpperCase()
+		symbol: "shib"
 	}).select(
 		"id ethId name type symbol iconURL cmcRank tagNames maxSupply totalSupply circulatingSupply contractAddress marketCap urls usd prices -_id"
 	);
 
+		console.log(coinOrToken);
 	return coinOrToken || {};
 };
 
@@ -294,11 +288,87 @@ const getListOfSharkFollowed = async (userId) => {
 	return { message: "success", datas: users || [] };
 };
 
-const getListCryptosOfShark = async (sharkId) => {
+const getListCryptosOfShark1 = async (sharkId) => {
 	const shark = await SharkModel.findOne({ sharkId: sharkId }).select(
 		"cryptos -_id"
 	);
 	return shark?.cryptos || -1;
+};
+
+const getListCryptosOfShark = async (sharkId) => {
+	// if (!_.isNumber(sharkId)) return -1;
+	const rawData = await SharkModel.findOne({ sharkId: sharkId }).select(
+		"coins -_id"
+	);
+
+	const coins = rawData.coins;
+
+	const cryptos = Object.keys(coins).map(async (coinSymbol) => {
+		const coinDetails = await getCoinOrTokenDetails(coinSymbol.toLowerCase());
+		console.log(coinDetails);
+
+		let quantity = coins[coinSymbol];
+		if (typeof quantity === "object")
+			quantity = Number(quantity["$numberLong"]);
+
+		if (Object.keys(coinDetails).length === 0)
+			return {
+				symbol: coinSymbol,
+				quantity: quantity
+			};
+		else {
+			return {
+				symbol: coinSymbol,
+				quantity: quantity,
+				name: coinDetails["name"],
+				tagNames: coinDetails["tagNames"],
+				cmcRank: coinDetails["cmcRank"],
+				iconURL: coinDetails["iconURL"],
+				price: coinDetails["usd"]["price"],
+				total: Math.floor(coinDetails["usd"]["price"] * quantity)
+			};
+		}
+	});
+
+	return cryptos || -1;
+
+	rawData.forEach((doc) => {
+		coins = doc.data()["coins"];
+	});
+
+	const promiseCryptos = await Object.keys(coins).map(async (coinSymbol) => {
+		const coinDetails = await getCoinOrTokenDetails(coinSymbol);
+
+		let quantity = coins[coinSymbol];
+		if (typeof quantity === "object")
+			quantity = Number(quantity["$numberLong"]);
+
+		if (Object.keys(coinDetails).length === 0)
+			return {
+				symbol: coinSymbol,
+				quantity: quantity
+			};
+		else {
+			return {
+				symbol: coinSymbol,
+				quantity: quantity,
+				name: coinDetails["name"],
+				tagNames: coinDetails["tagNames"],
+				cmcRank: coinDetails["cmcRank"],
+				iconURL: coinDetails["iconURL"],
+				price: coinDetails["usd"]["price"],
+				total: Math.floor(coinDetails["usd"]["price"] * quantity)
+			};
+		}
+	});
+
+	// let cryptos = await getValueFromPromise(promiseCryptos);
+
+	// rawData.forEach((doc) => {
+	//     doc.ref.update({ cryptos: cryptos });
+	// });
+
+	// return cryptos.length !== 0 ? cryptos : -1;
 };
 
 const getTransactionsLength = async (valueFilter = 0) => {
@@ -310,7 +380,7 @@ const getTransactionsLength = async (valueFilter = 0) => {
 		},
 
 		{ $match: { total: { $gte: valueFilter } } },
-		{ $count: "transactionsLength"}
+		{ $count: "transactionsLength" }
 	]);
 };
 

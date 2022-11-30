@@ -19,7 +19,7 @@ const getUserProfile = async (userId) => {
 	if (!userId) return {};
 	else {
 		const user = await UserModel.findOne({ userId: userId }).select(
-			"userId username email phoneNumber fullName avatar website sharksFollowed updatedAt createdAt  -_id"
+			"userId username email phoneNumber fullName avatar website sharksFollowed updatedAt createdAt -_id"
 		);
 
 		if (!user) return {};

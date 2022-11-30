@@ -193,7 +193,7 @@ function DisplayController() {
 			if (_.isNaN(idCheck)) sharkId = undefined;
 			else sharkId = idCheck;
 		}
-
+		
 		await getListCryptosOfShark(sharkId)
 			.then((datas) =>
 				datas === -1
@@ -207,7 +207,7 @@ function DisplayController() {
 							message: "successfully",
 							error: null,
 							datas: datas,
-							datasLength: datas.length
+							// datasLength: datas.length
 					  })
 			)
 			.catch((error) =>
