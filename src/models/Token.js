@@ -85,4 +85,4 @@ const TokenSchema = new mongoose.Schema(
 	{ versionKey: false }
 );
 
-module.exports = mongoose.model("Token", TokenSchema);
+module.exports = mongoose.model("Coin", TokenSchema);

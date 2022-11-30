@@ -128,7 +128,7 @@ function DisplayController() {
 	this.getCoinOrTokenDetails = async (req, res, next) => {
 		if (!req.query.symbol) symbol = null;
 		else {
-			const symbolCheck = _.toString(req.query.symbol).toUpperCase();
+			const symbolCheck = _.toString(req.query.symbol).toLowerCase();
 			if (_.isNaN(symbolCheck)) symbol = undefined;
 			else symbol = symbolCheck;
 		}

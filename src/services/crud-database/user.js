@@ -162,12 +162,11 @@ const getListTrendingTokens = async () => {
 const getCoinOrTokenDetails = async (coinSymbol) => {
 	coinSymbol = coinSymbol.toLowerCase()
 	const coinOrToken = await TokenModel.findOne({
-		symbol: "shib"
+		symbol: coinSymbol
 	}).select(
 		"id ethId name type symbol iconURL cmcRank tagNames maxSupply totalSupply circulatingSupply contractAddress marketCap urls usd prices -_id"
 	);
 
-		console.log(coinOrToken);
 	return coinOrToken || {};
 };
 
@@ -303,10 +302,8 @@ const getListCryptosOfShark = async (sharkId) => {
 
 	const coins = rawData.coins;
 
-	const cryptos = Object.keys(coins).map(async (coinSymbol) => {
+	let cryptos = Object.keys(coins).map(async (coinSymbol) => {
 		const coinDetails = await getCoinOrTokenDetails(coinSymbol.toLowerCase());
-		console.log(coinDetails);
-
 		let quantity = coins[coinSymbol];
 		if (typeof quantity === "object")
 			quantity = Number(quantity["$numberLong"]);
@@ -329,46 +326,20 @@ const getListCryptosOfShark = async (sharkId) => {
 			};
 		}
 	});
+
+
+	cryptos = await getValueFromPromise(cryptos); 
+
+	await SharkModel.findOneAndUpdate({sharkId: sharkId},
+		{cryptos: cryptos});
 
 	return cryptos || -1;
 
-	rawData.forEach((doc) => {
-		coins = doc.data()["coins"];
-	});
+};
 
-	const promiseCryptos = await Object.keys(coins).map(async (coinSymbol) => {
-		const coinDetails = await getCoinOrTokenDetails(coinSymbol);
-
-		let quantity = coins[coinSymbol];
-		if (typeof quantity === "object")
-			quantity = Number(quantity["$numberLong"]);
-
-		if (Object.keys(coinDetails).length === 0)
-			return {
-				symbol: coinSymbol,
-				quantity: quantity
-			};
-		else {
-			return {
-				symbol: coinSymbol,
-				quantity: quantity,
-				name: coinDetails["name"],
-				tagNames: coinDetails["tagNames"],
-				cmcRank: coinDetails["cmcRank"],
-				iconURL: coinDetails["iconURL"],
-				price: coinDetails["usd"]["price"],
-				total: Math.floor(coinDetails["usd"]["price"] * quantity)
-			};
-		}
-	});
-
-	// let cryptos = await getValueFromPromise(promiseCryptos);
-
-	// rawData.forEach((doc) => {
-	//     doc.ref.update({ cryptos: cryptos });
-	// });
-
-	// return cryptos.length !== 0 ? cryptos : -1;
+const getValueFromPromise = async (promiseValue) => {
+    const value = await Promise.all(promiseValue);
+    return value;
 };
 
 const getTransactionsLength = async (valueFilter = 0) => {
