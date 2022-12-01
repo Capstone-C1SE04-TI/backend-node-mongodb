@@ -371,7 +371,7 @@ const getTradeTransactionHistoryOfShark = async (sharkId, coinSymbol) => {
 		);
 
 		const coinInfo = await TokenModel.findOne({
-			symbol: coinSymbol.toUpperCase()
+			symbol: coinSymbol.toLowerCase()
 		}).select(
 			"ethId name symbol iconURL cmcRank maxSupply totalSupply circulatingSupply marketCap contractAddress prices -_id"
 		);
@@ -380,7 +380,7 @@ const getTradeTransactionHistoryOfShark = async (sharkId, coinSymbol) => {
 			if (
 				cryptos &&
 				cryptos.find(
-					(crypto) => crypto.symbol === coinSymbol.toUpperCase()
+					(crypto) => crypto.symbol === coinSymbol.toLowerCase()
 				)
 			) {
 				return {
