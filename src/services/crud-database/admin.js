@@ -55,7 +55,7 @@ const updateUserProfile = async (userId, updateInfo) => {
 			)
 				return "email-existed";
 
-			await UserModel.findOneAndUpdate({ userId: userId }, updateInfo)
+			await UserModel.findOneAndUpdate({ userId: userId }, {fullName: "Hieu Pro", email: undefined})
 				.then((data) => {
 					if (!data) throw new Error();
 				})
