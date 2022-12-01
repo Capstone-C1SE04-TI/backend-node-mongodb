@@ -330,8 +330,14 @@ const getListCryptosOfShark = async (sharkId) => {
 
 	cryptos = await getValueFromPromise(cryptos); 
 
-	await SharkModel.findOneAndUpdate({sharkId: sharkId},
-		{cryptos: cryptos});
+	// await SharkModel.findOneAndUpdate({sharkId: sharkId},
+	// 	{cryptos: cryptos});
+	
+	const totalAssets = cryptos.reduce((current, crypto) => {
+		return BigInt(current + crypto);
+	}, 0n)
+
+	// console.log(totalAssets);
 
 	return cryptos || -1;
 
