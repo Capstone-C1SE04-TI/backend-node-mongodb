@@ -339,8 +339,8 @@ const getListCryptosOfShark = async (sharkId) => {
 
 	// console.log(totalAssets.toString());
 
-	await SharkModel.findOneAndUpdate({sharkId : sharkId},
-		{totalAssets: totalAssets.toString()});
+	// await SharkModel.findOneAndUpdate({sharkId : sharkId},
+	// 	{totalAssets: totalAssets.toString()});
 
 	return cryptos || -1;
 
