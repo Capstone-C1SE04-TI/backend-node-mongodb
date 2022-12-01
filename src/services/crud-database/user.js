@@ -169,7 +169,7 @@ const getListTrendingTokens = async () => {
 
 const getCoinOrTokenDetails = async (coinSymbol) => {
 	const coinOrToken = await TokenModel.findOne({
-		symbol: coinSymbol.toUpperCase()
+		symbol: coinSymbol.toLowerCase()
 	}).select(
 		"id ethId name type symbol iconURL cmcRank tagNames maxSupply totalSupply circulatingSupply contractAddress marketCap urls usd prices -_id"
 	);
@@ -380,7 +380,7 @@ const getTradeTransactionHistoryOfShark = async (sharkId, coinSymbol) => {
 			if (
 				cryptos &&
 				cryptos.find(
-					(crypto) => crypto.symbol === coinSymbol.toLowerCase()
+					(crypto) => crypto.symbol === coinSymbol.toUpperCase()
 				)
 			) {
 				return {
