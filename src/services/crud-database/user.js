@@ -3,7 +3,8 @@ const {
 	CoinModel,
 	SharkModel,
 	TagModel,
-	TransactionModel
+	TransactionModel, 
+	TransactionTestModel
 } = require("../../models");
 const {
 	QUERY_LIMIT_ITEM,
@@ -303,7 +304,7 @@ const getListCryptosOfShark = async (sharkId) => {
 };
 
 const getTransactionsLength = async (valueFilter = 0) => {
-	return await TransactionModel.aggregate([
+	return await TransactionTestModel.aggregate([
 		{
 			$project: {
 				total: { $multiply: ["$presentPrice", "$numberOfTokens"] }
@@ -315,18 +316,28 @@ const getTransactionsLength = async (valueFilter = 0) => {
 	]);
 };
 
-const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
-	let transactions = await SharkModel.find({}).select("transactionsHistory -_id");
+//tam thoi
+const getTransactionsOfAllSharks1 = async (page, valueFilter = 0) => {
+	let transactions = await SharkModel.find({}).select("sharkId transactionsHistory -_id");
 	transactions = transactions.reduce((curr, transaction) =>{
+		transaction.transactionsHistory = transaction.transactionsHistory.map((trans) =>{
+			return Object.assign({sharkId: transaction.sharkId}, trans);
+		})
 		return curr.concat(transaction.transactionsHistory);
 	}, [])
+
+	transactions.forEach(async(transac) =>{
+		const doc = new TransactionTestModel(transac);
+		await doc.save();
+	})
+
 	return transactions;
 }
 
-const getTransactionsOfAllSharks1 = async (page, valueFilter = 0) => {
+const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
 	if (page < 1 || page % 1 !== 0) return [];
 
-	const transactions = await TransactionModel.aggregate([
+	const transactions = await TransactionTestModel.aggregate([
 		{
 			$project: {
 				_id: 0,
@@ -497,7 +508,7 @@ const getTradeTransactionHistoryOfShark = async (sharkId, coinSymbol) => {
 		const coinInfo = await CoinModel.findOne({
 			symbol: coinSymbol.toLowerCase()
 		}).select(
-			"coinId name symbol iconURL cmcRank maxSupply totalSupply circulatingSupply marketCap contractAddress prices -_id"
+			"coinId name symbol iconURL cmcRank maxSupply totalSupply circulatingSupply marketCap contractAddress prices totalInvestment -_id"
 		);
 
 		// Need reset to toLowerCase()

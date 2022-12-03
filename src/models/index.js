@@ -5,6 +5,7 @@ const TokenModel = require("./Token");
 const CoinModel = require("./Coin");
 const TagModel = require("./Tag");
 const TransactionModel = require("./Transaction");
+const TransactionTestModel = require("./TransactionTest");
 
 module.exports = {
 	UserModel,
@@ -13,5 +14,6 @@ module.exports = {
 	TokenModel,
 	CoinModel,
 	TagModel,
-	TransactionModel
+	TransactionModel,
+	TransactionTestModel
 };
