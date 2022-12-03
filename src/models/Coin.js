@@ -82,8 +82,8 @@ const CoinSchema = new mongoose.Schema(
 			type: Object,
 			default: {}
 		},
-		pricesLast1Day: {
-			type: Array,
+		pricesLast1Month: {
+			type: Object,
 			default: {}
 		}
 	},

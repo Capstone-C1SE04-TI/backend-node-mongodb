@@ -124,7 +124,7 @@ const getPasswordByEmail = async (email) => {
 const getListOfCoinsAndTokens = async () => {
 	const tokens = await CoinModel.find({})
 		.select(
-			"coinId name type symbol iconURL tagNames cmcRank usd marketCap circulatingSupply pricesLast1Day -_id"
+			"coinId name type symbol iconURL tagNames cmcRank usd marketCap circulatingSupply pricesLast1Month -_id"
 		)
 		.sort("coinId");
 
@@ -140,7 +140,7 @@ const getListReducingCoinsAndTokens = async () => {
 		.sort({ "usd.percentChange24h": "asc" })
 		.limit(TRENDING_REDUCING_LIMIT_ITEM)
 		.select(
-			"coinId name type symbol iconURL tagNames usd pricesLast1Day -_id"
+			"coinId name type symbol iconURL tagNames usd pricesLast1Month -_id"
 		);
 };
 
