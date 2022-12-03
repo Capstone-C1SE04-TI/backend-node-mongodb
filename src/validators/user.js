@@ -58,7 +58,7 @@ const validateChangePasswordBody = async (req, res, next) => {
 };
 
 const validateUpdateProfileBody = async (req, res, next) => {
-	await validateFullNameOptional(req);
+	// await validateFullNameOptional(req);
 	await validateEmailOptional(req);
 	await validatePhoneNumberOptional(req);
 	await validateWebsiteOptional(req);

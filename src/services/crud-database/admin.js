@@ -4,14 +4,14 @@ const { checkExistedUserId } = require("./user");
 const getListOfAdmins = async () => {
 	return await AdminModel.find({})
 		.sort("id")
-		.select("id username email  -_id");
+		.select("id username email -_id");
 };
 
 const getListOfUsers = async () => {
 	return await UserModel.find({})
 		.sort("id")
 		.select(
-			"userId username email phoneNumber fullName avatar website sharksFollowed updatedAt createdAt  -_id"
+			"userId username email phoneNumber fullName avatar website sharksFollowed updatedAt createdAt -_id"
 		);
 };
 
@@ -19,7 +19,7 @@ const getUserProfile = async (userId) => {
 	if (!userId) return {};
 	else {
 		const user = await UserModel.findOne({ userId: userId }).select(
-			"userId username email phoneNumber fullName avatar website sharksFollowed updatedAt createdAt  -_id"
+			"userId username email phoneNumber fullName avatar website sharksFollowed updatedAt createdAt -_id"
 		);
 
 		if (!user) return {};
@@ -109,7 +109,7 @@ const checkExistedUsername = async (username) => {
 
 const getPasswordByUsername = async (username) => {
 	const admin = await AdminModel.findOne({ username: username }).select(
-		"password  -_id"
+		"password -_id"
 	);
 	return admin?.password || null;
 };
@@ -123,6 +123,7 @@ const deleteUsersByUserId = async (userIds) => {
 		const deletedObj = await UserModel.remove({
 			userId: { $in: userIds }
 		});
+
 		return deletedObj.deletedCount > 0;
 	} catch (error) {
 		return false;

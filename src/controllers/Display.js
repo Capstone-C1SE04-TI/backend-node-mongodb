@@ -128,7 +128,7 @@ function DisplayController() {
 	this.getCoinOrTokenDetails = async (req, res, next) => {
 		if (!req.query.symbol) symbol = null;
 		else {
-			const symbolCheck = _.toString(req.query.symbol).toUpperCase();
+			const symbolCheck = _.toString(req.query.symbol).toLowerCase();
 			if (_.isNaN(symbolCheck)) symbol = undefined;
 			else symbol = symbolCheck;
 		}
@@ -229,7 +229,6 @@ function DisplayController() {
 			if (_.isNaN(idCheck)) sharkId = undefined;
 			else sharkId = idCheck;
 		}
-
 		await getListTransactionsOfShark(sharkId)
 			.then((datas) =>
 				!_.isArray(datas)
@@ -258,9 +257,9 @@ function DisplayController() {
 
 	this.getListTransactionsLength = async (req, res, next) => {
 		let { valueFilter } = req.body;
-		
+
 		valueFilter = _.toNumber(valueFilter);
-		
+
 		if (_.isNaN(valueFilter) || valueFilter < 0) valueFilter = 0;
 
 		await getTransactionsLength(valueFilter)

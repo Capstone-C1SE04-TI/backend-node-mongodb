@@ -1,42 +1,43 @@
 const mongoose = require("mongoose");
 
-const TokenSchema = new mongoose.Schema(
+const CoinSchema = new mongoose.Schema(
 	{
-		id: {
+		coinId: {
 			type: Number,
-			required: true,
-			unique: true
+			default: null
 		},
 		ethId: {
-			type: Number,
-			unique: true
+			type: String,
+			default: ""
+		},
+		coingeckoId: {
+			type: String,
+			default: ""
 		},
 		cmcRank: {
 			type: Number,
-			required: true,
-			unique: true
+			default: null
 		},
 		name: {
 			type: String,
 			trim: true,
-			required: true
+			required: true,
+			default: ""
 		},
 		symbol: {
 			type: String,
 			trim: true,
-			required: true,
-			unique: true
+			required: true
 		},
 		contractAddress: {
 			type: String,
 			trim: true,
-			required: true,
-			unique: true
+			default: ""
 		},
 		type: {
 			type: String,
 			trim: true,
-			required: true
+			default: ""
 		},
 		iconURL: {
 			type: String,
@@ -44,16 +45,20 @@ const TokenSchema = new mongoose.Schema(
 			default: ""
 		},
 		marketCap: {
-			type: Number
+			type: Number,
+			default: null
 		},
 		maxSupply: {
-			type: Number
+			type: Number,
+			default: null
 		},
 		totalSupply: {
-			type: Number
+			type: Number,
+			default: null
 		},
 		circulatingSupply: {
-			type: Number
+			type: Number,
+			default: null
 		},
 		tagNames: {
 			type: Array,
@@ -79,10 +84,10 @@ const TokenSchema = new mongoose.Schema(
 		},
 		pricesLast1Day: {
 			type: Array,
-			default: []
+			default: {}
 		}
 	},
 	{ versionKey: false }
 );
 
-module.exports = mongoose.model("Token", TokenSchema);
+module.exports = mongoose.model("Coin", CoinSchema);

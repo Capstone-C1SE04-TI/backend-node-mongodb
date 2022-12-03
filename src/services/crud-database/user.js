@@ -1,6 +1,6 @@
 const {
 	UserModel,
-	TokenModel,
+	CoinModel,
 	SharkModel,
 	TagModel,
 	TransactionModel
@@ -9,6 +9,7 @@ const {
 	QUERY_LIMIT_ITEM,
 	TRENDING_REDUCING_LIMIT_ITEM
 } = require("../../constants");
+const { convertUnixTimestampToNumber } = require("../../helpers");
 
 const getUserByUsername = async (username) => {
 	return await UserModel.findOne({ username: username });
@@ -46,14 +47,6 @@ const createNewUser = async ({
 	} catch (error) {
 		return false;
 	}
-};
-
-const getWalletAddress = async (userId) => {
-	const walletAddress = await UserModel.findOne({
-		userId: userId
-	}).select("walletAddress -_id");
-
-	return walletAddress;
 };
 
 const updateUserConfirmationCode = async (userId, code) => {
@@ -129,49 +122,51 @@ const getPasswordByEmail = async (email) => {
 };
 
 const getListOfCoinsAndTokens = async () => {
-	const tokens = await TokenModel.find({})
+	const tokens = await CoinModel.find({})
 		.select(
-			"id name symbol iconURL tagNames cmcRank usd marketCap circulatingSupply pricesLast1Day -_id"
+			"coinId name type symbol iconURL tagNames cmcRank usd marketCap circulatingSupply pricesLast1Day -_id"
 		)
-		.sort("id");
+		.sort("coinId");
 
 	return tokens || [];
 };
 
 const getCoinsAndTokensLength = async () => {
-	return await TokenModel.count({});
+	return await CoinModel.count({});
 };
 
 const getListReducingCoinsAndTokens = async () => {
-	return await TokenModel.find({})
+	return await CoinModel.find({})
 		.sort({ "usd.percentChange24h": "asc" })
 		.limit(TRENDING_REDUCING_LIMIT_ITEM)
-		.select("id name symbol iconURL tagNames usd pricesLast1Day -_id");
+		.select(
+			"coinId name type symbol iconURL tagNames usd pricesLast1Day -_id"
+		);
 };
 
 const getListTrendingCoins = async () => {
-	return await TokenModel.find({ type: "coin" })
+	return await CoinModel.find({ type: "coin" })
 		.sort({ "usd.percentChange24h": "desc" })
 		.limit(TRENDING_REDUCING_LIMIT_ITEM)
 		.select(
-			"id name symbol iconURL tagNames usd marketCap circulatingSupply -_id"
+			"coinId name type symbol iconURL tagNames usd marketCap circulatingSupply -_id"
 		);
 };
 
 const getListTrendingTokens = async () => {
-	return await TokenModel.find({ type: "token" })
+	return await CoinModel.find({ type: "token" })
 		.sort({ "usd.percentChange24h": "desc" })
 		.limit(TRENDING_REDUCING_LIMIT_ITEM)
 		.select(
-			"id name symbol iconURL tagNames usd marketCap circulatingSupply -_id"
+			"coinId name type symbol iconURL tagNames usd marketCap circulatingSupply -_id"
 		);
 };
 
 const getCoinOrTokenDetails = async (coinSymbol) => {
-	const coinOrToken = await TokenModel.findOne({
+	const coinOrToken = await CoinModel.findOne({
 		symbol: coinSymbol.toLowerCase()
 	}).select(
-		"id ethId name type symbol iconURL cmcRank tagNames maxSupply totalSupply circulatingSupply contractAddress marketCap urls usd prices -_id"
+		"coinId ethId coingeckoId name type symbol iconURL cmcRank tagNames maxSupply totalSupply circulatingSupply contractAddress marketCap urls usd prices -_id"
 	);
 
 	return coinOrToken || {};
@@ -251,16 +246,20 @@ const unfollowWalletOfShark = async (userId, sharkId) => {
 		if (userId === undefined) return "userid-invalid";
 		if (sharkId === null) return { message: "sharkid-required" };
 		if (sharkId === undefined) return { message: "sharkid-invalid" };
+
 		if (!(await checkExistedUserId(userId)))
 			return { message: "user-notfound" };
 		if (!(await checkExistedSharkId(sharkId)))
 			return { message: "shark-notfound" };
+
 		const shark = await SharkModel.findOne({ sharkId: sharkId }).select(
 			"sharkId walletAddress totalAssets percent24h followers -_id"
 		);
 		let sharkFollowers = shark.followers;
+
 		if (sharkFollowers && !sharkFollowers.some((id) => id === userId))
 			return { message: "not-followed-yet" };
+
 		// Remove object has key id === sharkId
 		sharkFollowers = sharkFollowers.filter((id) => id !== userId);
 		await SharkModel.findOneAndUpdate(
@@ -273,8 +272,10 @@ const unfollowWalletOfShark = async (userId, sharkId) => {
 			.catch((error) => {
 				throw new Error(error);
 			});
+
 		shark.followers = sharkFollowers;
 		const infoUnfollow = { ...shark._doc, isFollowed: false };
+
 		return { message: "success", data: infoUnfollow };
 	} catch (error) {
 		return { message: "error-unfollow-failed", error: error };
@@ -310,11 +311,19 @@ const getTransactionsLength = async (valueFilter = 0) => {
 		},
 
 		{ $match: { total: { $gte: valueFilter } } },
-		{ $count: "transactionsLength"}
+		{ $count: "transactionsLength" }
 	]);
 };
 
 const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
+	let transactions = await SharkModel.find({}).select("transactionsHistory -_id");
+	transactions = transactions.reduce((curr, transaction) =>{
+		return curr.concat(transaction.transactionsHistory);
+	}, [])
+	return transactions;
+}
+
+const getTransactionsOfAllSharks1 = async (page, valueFilter = 0) => {
 	if (page < 1 || page % 1 !== 0) return [];
 
 	const transactions = await TransactionModel.aggregate([
@@ -350,7 +359,121 @@ const getListTransactionsOfShark = async (sharkId) => {
 	const shark = await SharkModel.findOne({ sharkId: sharkId }).select(
 		"transactionsHistory -_id"
 	);
+
 	return shark?.transactionsHistory || -1;
+};
+
+const getValueFromPromise = async (promiseValue) => {
+	const value = await Promise.all(promiseValue);
+	return value;
+};
+
+const getDateNearTransaction = (dateList, dateTransaction) => {
+	let datePricesTokenCut = dateList.map((date) => {
+		return date["date"].slice(0, 10);
+	});
+	let dateTransactionCut = dateTransaction.slice(0, 10);
+	let positionDate = null;
+	// Cut hour
+	let dateCutByHours = datePricesTokenCut.filter((date, index) => {
+		if (Number(date) === Number(dateTransactionCut)) positionDate = index;
+		return Number(date) === Number(dateTransactionCut);
+	});
+
+	if (dateCutByHours.length > 0) {
+		// date transaction before date change price
+		if (Number(dateTransaction) < Number(dateList[positionDate]))
+			return positionDate === dateList.length - 1
+				? dateList[dateList.length - 1]
+				: dateList[positionDate + 1];
+		else return dateList[positionDate];
+	}
+
+	// cut date
+	let dateCutByDates = datePricesTokenCut.filter((date, index) => {
+		date = date.slice(0, 8);
+		if (Number(date) === Number(dateTransactionCut.slice(0, 8)))
+			positionDate = index;
+		return Number(date) === Number(dateTransactionCut.slice(0, 8));
+	});
+
+	let hourTrade = dateTransactionCut.slice(8);
+	let datesCutLength = dateCutByDates.length;
+	for (let i = 0; i < datesCutLength; i++) {
+		if (Number(hourTrade) > Number(dateCutByDates[i].slice(8)))
+			return dateList[positionDate - datesCutLength + i + 1];
+	}
+
+	return positionDate === null
+		? {
+				date: "none",
+				value: 0
+		  }
+		: positionDate === dateList.length - 1
+		? dateList[dateList.length - 1]
+		: dateList[positionDate + 1];
+};
+
+const getListTransactionsOfShark1 = async (sharkId) => {
+	// if (!_.isNumber(sharkId)) return -1;
+	const rawData = await SharkModel.findOne({ sharkId: sharkId }).select(
+		"transactionsHistory -_id"
+	);
+
+	let transactions = rawData.transactionsHistory.map(async (transaction) => {
+		let numberOfTokens =
+			transaction["value"] / Math.pow(10, transaction["tokenDecimal"]);
+		let hoursPrice = await getHoursPriceOfToken(transaction["tokenSymbol"]);
+
+		// found hourly price
+		if (typeof hoursPrice !== "undefined") {
+			hoursPrice = Object.keys(hoursPrice).map((unixDate) => {
+				let date = convertUnixTimestampToNumber(unixDate);
+				date = date.toString();
+				return {
+					date: date,
+					value: hoursPrice[unixDate]
+				};
+			});
+
+			hoursPrice.sort(
+				(firstObj, secondObj) => secondObj["date"] - firstObj["date"]
+			);
+		}
+
+		let presentData =
+			typeof hoursPrice !== "undefined" ? hoursPrice[0] : undefined;
+
+		const dateNearTransaction =
+			typeof hoursPrice !== "undefined"
+				? getDateNearTransaction(hoursPrice, transaction["timeStamp"])
+				: { date: "none", value: 0 };
+
+		let presentPrice =
+			typeof presentData === "undefined" ? 0 : presentData["value"];
+
+		let presentDate =
+			typeof presentData === "undefined" ? 0 : presentData["date"];
+
+		Object.assign(transaction, {
+			numberOfTokens: numberOfTokens,
+			pastDate: dateNearTransaction["date"],
+			pastPrice: dateNearTransaction["value"],
+			presentDate: presentDate,
+			presentPrice: presentPrice
+		});
+
+		return transaction;
+	});
+
+	transactions = await getValueFromPromise(transactions);
+
+	await SharkModel.findOneAndUpdate(
+		{ sharkId: sharkId },
+		{ transactionsHistory: transactions }
+	);
+
+	return transactions;
 };
 
 const getTradeTransactionHistoryOfShark = async (sharkId, coinSymbol) => {
@@ -366,16 +489,18 @@ const getTradeTransactionHistoryOfShark = async (sharkId, coinSymbol) => {
 		);
 		const { historyDatas, cryptos } = sharks;
 
+		// Need reset to toLowerCase()
 		const historyData = historyDatas.find(
 			(data) => data.coinSymbol === coinSymbol.toUpperCase()
 		);
 
-		const coinInfo = await TokenModel.findOne({
+		const coinInfo = await CoinModel.findOne({
 			symbol: coinSymbol.toLowerCase()
 		}).select(
-			"ethId name symbol iconURL cmcRank maxSupply totalSupply circulatingSupply marketCap contractAddress prices -_id"
+			"coinId name symbol iconURL cmcRank maxSupply totalSupply circulatingSupply marketCap contractAddress prices -_id"
 		);
 
+		// Need reset to toLowerCase()
 		if (!historyData) {
 			if (
 				cryptos &&
@@ -408,8 +533,8 @@ const getTradeTransactionHistoryOfShark = async (sharkId, coinSymbol) => {
 };
 
 const getHoursPriceOfToken = async (tokenSymbol) => {
-	const token = await TokenModel.findOne({
-		symbol: tokenSymbol.toUpperCase()
+	const token = await CoinModel.findOne({
+		symbol: tokenSymbol.toLowerCase()
 	}).select("originalPrices -_id");
 
 	return token?.originalPrices?.hourly || {};
@@ -437,13 +562,13 @@ const getGainLossOfSharks = async (isLoss) => {
 const getGainLossOfCoins = async (isLoss) => {
 	const sortType = isLoss ? "asc" : "desc";
 	const sharkGainLoss = isLoss
-		? await TokenModel.find({})
+		? await CoinModel.find({})
 				.select("symbol usd.price usd.percentChange24h -_id")
 				.where("usd.percentChange24h")
 				.lt(0)
 				.sort({ "usd.percentChange24h": sortType })
 				.limit(20)
-		: await TokenModel.find({})
+		: await CoinModel.find({})
 				.select("symbol usd.price usd.percentChange24h -_id")
 				.where("usd.percentChange24h")
 				.gte(0)
