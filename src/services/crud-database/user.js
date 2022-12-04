@@ -4,7 +4,8 @@ const {
 	SharkModel,
 	TagModel,
 	TransactionModel, 
-	TransactionTestModel
+	TransactionTestModel,
+	TestModel
 } = require("../../models");
 const {
 	QUERY_LIMIT_ITEM,
@@ -364,6 +365,13 @@ const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
 	// .select("-_id")
 
 	return transactions || [];
+};
+
+const getListTransactionsOfShark11 = async (sharkId) => {
+	const shark = await SharkModel.find({},{cryptos: 1})
+	console.log(shark);
+
+	return shark || -1;
 };
 
 const getListTransactionsOfShark = async (sharkId) => {
