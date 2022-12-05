@@ -167,7 +167,7 @@ const getCoinOrTokenDetails = async (coinSymbol) => {
 	const coinOrToken = await CoinModel.findOne({
 		symbol: coinSymbol.toLowerCase()
 	}).select(
-		"coinId ethId coingeckoId name type symbol iconURL cmcRank tagNames maxSupply totalSupply circulatingSupply contractAddress marketCap urls usd prices -_id"
+		"coinId ethId coingeckoId name type symbol iconURL cmcRank tagNames maxSupply totalSupply circulatingSupply contractAddress marketCap urls usd prices totalInvestment -_id"
 	);
 
 	return coinOrToken || {};
