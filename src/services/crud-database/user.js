@@ -290,7 +290,7 @@ const getListOfSharkFollowed = async (userId) => {
 		return { message: "user-notfound" };
 
 	const users = await SharkModel.find({ followers: userId }).select(
-		"sharkId totalAssets percent24h transactionsHistory walletAddress -_id"
+		"sharkId totalAssets percent24h transactionsHistory walletAddress totalValueIn totalValueOut -_id"
 	);
 
 	return { message: "success", datas: users || [] };
@@ -372,17 +372,59 @@ const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
 	return transactions || [];
 };
 
-const getListTransactionsOfShark11 = async (sharkId) => {
-	const shark = await SharkModel.find({}, { cryptos: 1 });
-	console.log(shark);
-
-	return shark || -1;
-};
-
 const getListTransactionsOfShark = async (sharkId) => {
 	const shark = await SharkModel.findOne({ sharkId: sharkId }).select(
 		"transactionsHistory -_id"
 	);
+
+	return shark?.transactionsHistory || -1;
+};
+
+const getListTransactionsOfShark1 = async (sharkId) => {
+	const shark = await SharkModel.findOne({ sharkId: sharkId }).select(
+		"walletAddress transactionsHistory -_id"
+	);
+
+	const transactions = shark.transactionsHistory;
+
+	const address = shark.walletAddress;
+
+	const listDate = transactions.map((value) => {
+		return Number(value.timeStamp);
+	});
+	const firstTransactionTime = listDate.reduce((currDate, valueDate) => {
+		return currDate > valueDate ? valueDate : currDate;
+	}, listDate[0]);
+
+	const totalValueIn = transactions.reduce((totalValue, transaction) => {
+		const passValue =
+			transaction.pastPrice === 0 ? 1 : transaction.pastPrice;
+		return transaction.from.toLowerCase() === address.toLowerCase()
+			? totalValue + transaction.numberOfTokens * passValue
+			: totalValue;
+	}, 0);
+
+	const totalValueOut = transactions.reduce((totalValue, transaction) => {
+		const passValue =
+			transaction.pastPrice === 0 ? 1 : transaction.pastPrice;
+		return address.toLowerCase() === transaction.to.toLowerCase()
+			? totalValue + transaction.numberOfTokens * passValue
+			: totalValue;
+	}, 0);
+
+	console.log(firstTransactionTime, totalValueIn, totalValueOut);
+
+	console.log(sharkId);
+
+	await SharkModel.findOneAndUpdate(
+		{ sharkId: sharkId },
+		{
+			firstTransactionDate: firstTransactionTime,
+			totalValueIn: totalValueIn,
+			totalValueOut: totalValueOut
+		}
+	);
+	console.log("done");
 
 	return shark?.transactionsHistory || -1;
 };
@@ -438,7 +480,7 @@ const getDateNearTransaction = (dateList, dateTransaction) => {
 		: dateList[positionDate + 1];
 };
 
-const getListTransactionsOfShark1 = async (sharkId) => {
+const getListTransactionsOfSharkSetting = async (sharkId) => {
 	// if (!_.isNumber(sharkId)) return -1;
 	const rawData = await SharkModel.findOne({ sharkId: sharkId }).select(
 		"transactionsHistory -_id"

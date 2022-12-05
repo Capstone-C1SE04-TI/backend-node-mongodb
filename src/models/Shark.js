@@ -39,6 +39,18 @@ const SharkSchema = new mongoose.Schema(
 		followers: {
 			type: Array,
 			default: []
+		},
+		firstTransactionDate: {
+			type: Number,
+			default: 0
+		},
+		totalValueIn: {
+			type: Number,
+			default: 0
+		},
+		totalValueOut: {
+			type: Number,
+			default: 0
 		}
 	},
 	{ versionKey: false }
