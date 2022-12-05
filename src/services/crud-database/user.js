@@ -4,8 +4,7 @@ const {
 	SharkModel,
 	TagModel,
 	TransactionModel,
-	TransactionTestModel,
-	TestModel
+	TransactionTestModel
 } = require("../../models");
 const {
 	QUERY_LIMIT_ITEM,
