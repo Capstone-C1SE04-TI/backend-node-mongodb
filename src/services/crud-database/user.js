@@ -3,7 +3,7 @@ const {
 	CoinModel,
 	SharkModel,
 	TagModel,
-	TransactionModel, 
+	TransactionModel,
 	TransactionTestModel,
 	TestModel
 } = require("../../models");
@@ -319,21 +319,25 @@ const getTransactionsLength = async (valueFilter = 0) => {
 
 //tam thoi
 const getTransactionsOfAllSharks1 = async (page, valueFilter = 0) => {
-	let transactions = await SharkModel.find({}).select("sharkId transactionsHistory -_id");
-	transactions = transactions.reduce((curr, transaction) =>{
-		transaction.transactionsHistory = transaction.transactionsHistory.map((trans) =>{
-			return Object.assign({sharkId: transaction.sharkId}, trans);
-		})
+	let transactions = await SharkModel.find({}).select(
+		"sharkId transactionsHistory -_id"
+	);
+	transactions = transactions.reduce((curr, transaction) => {
+		transaction.transactionsHistory = transaction.transactionsHistory.map(
+			(trans) => {
+				return Object.assign({ sharkId: transaction.sharkId }, trans);
+			}
+		);
 		return curr.concat(transaction.transactionsHistory);
-	}, [])
+	}, []);
 
-	transactions.forEach(async(transac) =>{
+	transactions.forEach(async (transac) => {
 		const doc = new TransactionTestModel(transac);
 		await doc.save();
-	})
+	});
 
 	return transactions;
-}
+};
 
 const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
 	if (page < 1 || page % 1 !== 0) return [];
@@ -370,7 +374,7 @@ const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
 };
 
 const getListTransactionsOfShark11 = async (sharkId) => {
-	const shark = await SharkModel.find({},{cryptos: 1})
+	const shark = await SharkModel.find({}, { cryptos: 1 });
 	console.log(shark);
 
 	return shark || -1;
@@ -606,7 +610,7 @@ const addNewShark = async (walletAddress) => {
 		});
 
 		return addedData instanceof SharkModel
-			? { message: "successful", isAdded: true }
+			? { message: "successful", isAdded: true, sharkData: addedData }
 			: { message: "wallet-address-exists", isAdded: false };
 	} catch (error) {
 		return { message: "error", error: error };

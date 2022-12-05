@@ -295,6 +295,7 @@ function UserController() {
 				data.isAdded
 					? res.status(200).json({
 							message: data.message,
+							data: data.sharkData,
 							error: null
 					  })
 					: res.status(400).json({
