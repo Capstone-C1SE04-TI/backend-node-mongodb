@@ -10,6 +10,7 @@ const {
 	TRENDING_REDUCING_LIMIT_ITEM
 } = require("../../constants");
 const { convertUnixTimestampToNumber } = require("../../helpers");
+const { log } = require("util");
 
 const getUserByUsername = async (username) => {
 	return await UserModel.findOne({ username: username });
@@ -291,13 +292,16 @@ const getListOfSharkFollowed = async (userId) => {
 		return { message: "user-notfound" };
 
 	const projection = {
-		sharkId:1,
-		totalAssets:1,
-		percent24h:1, 
-		walletAddress:1,
-	}
+		sharkId: 1,
+		totalAssets: 1,
+		percent24h: 1,
+		walletAddress: 1
+	};
 
-	const users = await InvestorModel.find({ followers: { $in: [userId] } }, projection);
+	const users = await InvestorModel.find(
+		{ followers: { $in: [userId] } },
+		projection
+	);
 
 	return { message: "success", datas: users || [] };
 };
@@ -319,17 +323,24 @@ const getTransactionsLength = async (valueFilter = 0) => {
 
 		{ $match: { total: { $gte: valueFilter } } },
 		{ $count: "transactionsLength" }
-	]); 
+	]);
 };
 
-const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
-	let transactions = await InvestorModel.find({"transactionsHistory.500": { $exists: 0 }, isShark: 1}).select(
-		"sharkId walletAddress transactionsHistory -_id"
-	);
+const getTransactionsOfAllSharks1 = async (page, valueFilter = 0) => {
+	let transactions = await InvestorModel.find({
+		"transactionsHistory.500": { $exists: 0 },
+		isShark: 1
+	}).select("sharkId walletAddress transactionsHistory -_id");
 	transactions = transactions.reduce((curr, transaction) => {
 		transaction.transactionsHistory = transaction.transactionsHistory.map(
 			(trans) => {
-				return Object.assign({ sharkId: transaction.sharkId, walletAddress: transaction.walletAddress }, trans);
+				return Object.assign(
+					{
+						sharkId: transaction.sharkId,
+						walletAddress: transaction.walletAddress
+					},
+					trans
+				);
 			}
 		);
 		return curr.concat(transaction.transactionsHistory);
@@ -343,7 +354,7 @@ const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
 	return transactions;
 };
 
-const getTransactionsOfAllSharks1 = async (page, valueFilter = 0) => {
+const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
 	if (page < 1 || page % 1 !== 0) return [];
 
 	const transactions = await TransactionModel.aggregate([
@@ -401,23 +412,30 @@ const getDateNearTransaction = (dateList, dateTransaction) => {
 	}
 
 	// cut date
-	let dateCutByDates = datePricesTokenCut.filter((date, index) => {
-		date = date.slice(0, 8);
-		if (Number(date) === Number(dateTransactionCut.slice(0, 8)))
-			positionDate = index;
-		return Number(date) === Number(dateTransactionCut.slice(0, 8));
-	});
+	if(positionDate === null){
+		let dateCutByDates = datePricesTokenCut.filter((date, index) => {
+			date = date.slice(0, 8);
+			if (Number(date) === Number(dateTransactionCut.slice(0, 8)))
+				positionDate = index;
+			return Number(date) === Number(dateTransactionCut.slice(0, 8));
+		});
+	
+		let hourTrade = dateTransactionCut.slice(8);
+		let datesCutLength = dateCutByDates.length;
+		for (let i = 0; i < datesCutLength; i++) {
+			if (Number(hourTrade) > Number(dateCutByDates[i].slice(8)))
+				return dateList[positionDate - datesCutLength + i + 1];
+		}
 
-	let hourTrade = dateTransactionCut.slice(8);
-	let datesCutLength = dateCutByDates.length;
-	for (let i = 0; i < datesCutLength; i++) {
-		if (Number(hourTrade) > Number(dateCutByDates[i].slice(8)))
-			return dateList[positionDate - datesCutLength + i + 1];
+		if(dateTransaction === '20220403072508')
+			console.log(datesCutLength);
 	}
+
+
 
 	return positionDate === null
 		? {
-				date: "none",
+				date: "notfound",
 				value: 0
 		  }
 		: positionDate === dateList.length - 1
@@ -425,16 +443,16 @@ const getDateNearTransaction = (dateList, dateTransaction) => {
 		: dateList[positionDate + 1];
 };
 
+// update
 const getListTransactionsOfShark1 = async (sharkId) => {
 	// if (!_.isNumber(sharkId)) return -1;
 	const rawData = await InvestorModel.find(
 		{ "transactionsHistory.500": { $exists: 0 }, isShark: 1 },
 		{ transactionsHistory: 1, sharkId: 1 }
-	)
-	
+	).limit(1);
 
 	// return rawData[0].transactionsHistory;
-	console.log('done phase 1');  
+	console.log("done phase 1");
 
 	// for(let sharkIndex = 0; sharkIndex <= rawData.length; ++sharkIndex){
 	// 	console.log(sharkIndex);
@@ -446,9 +464,11 @@ const getListTransactionsOfShark1 = async (sharkId) => {
 					Number(transaction["value"]) /
 					Math.pow(10, Number(transaction["tokenDecimal"]));
 
-				let hoursPrice = await getHoursPriceOfToken(
+				let originalPrices = await getOriginalPriceOfToken(
 					transaction["tokenSymbol"]
 				);
+
+				let hoursPrice = originalPrices.hourly;
 
 				// found hourly price
 				if (typeof hoursPrice !== "undefined") {
@@ -475,13 +495,24 @@ const getListTransactionsOfShark1 = async (sharkId) => {
 				const dateTransac = convertUnixTimestampToNumber(
 					transaction["timeStamp"]
 				);
-				const dateNearTransaction =
+				let dateNearTransaction =
 					typeof hoursPrice !== "undefined"
 						? getDateNearTransaction(
 								hoursPrice,
 								dateTransac.toString()
 						  )
 						: { date: "none", value: 0 };
+
+				if ((typeof hoursPrice !== "undefined") && dateNearTransaction.date === 'notfound') {
+					// console.log(hoursPrice[0]);
+					// console.log(dateNearTransaction);
+					let dailyPrice = originalPrices.daily;
+					dateNearTransaction = getPriceWithDaily(
+						dailyPrice,
+						dateTransac.toString()
+					);
+					// console.log(dateNearTransaction);
+				}
 
 				// if(transaction['hash'] === '0xa46515d756825d6544339d25a590575b7195cab1d0aa797aaa0acb90a30b5220')
 				// console.log(dateTransac.toString());
@@ -521,12 +552,34 @@ const getListTransactionsOfShark1 = async (sharkId) => {
 			}
 			// console.log( transactions[0]);
 
-		}); 
-		console.log(x.modifiedCount);
+		});
 	});
-	console.log('done phase 2');
+	console.log("done phase 2");
 
 	return 1;
+};
+
+const getPriceWithDaily = (dailyPrice, dateTransaction) => {
+	if (typeof dailyPrice !== "undefined") {
+		dailyPrice = Object.keys(dailyPrice).map((unixDate) => {
+			let date = convertUnixTimestampToNumber(unixDate);
+			date = date.toString();
+			return {
+				date: date,
+				value: dailyPrice[unixDate]
+			};
+		});
+
+		dailyPrice.sort(
+			(firstObj, secondObj) => secondObj["date"] - firstObj["date"]
+		);
+
+		const dateNearTransaction = getDateNearTransaction(dailyPrice, dateTransaction);
+			// console.log(dateNearTransaction);
+		return dateNearTransaction
+	}
+	
+	return  { date: "none", value: 0 };
 };
 
 const getListTransactionsOfShark = async (sharkId) => {
@@ -592,12 +645,12 @@ const getTradeTransactionHistoryOfShark = async (sharkId, coinSymbol) => {
 	}
 };
 
-const getHoursPriceOfToken = async (tokenSymbol) => {
+const getOriginalPriceOfToken = async (tokenSymbol) => {
 	const token = await CoinModel.findOne({
 		symbol: tokenSymbol.toLowerCase()
 	}).select("originalPrices -_id");
 
-	return token?.originalPrices?.hourly || {};
+	return token?.originalPrices || {};
 };
 
 const getGainLossOfSharks = async (isLoss) => {
@@ -730,7 +783,7 @@ module.exports = {
 	getTransactionsOfAllSharks,
 	getListTransactionsOfShark,
 	getTradeTransactionHistoryOfShark,
-	getHoursPriceOfToken,
+	getOriginalPriceOfToken,
 	getTransactionsLength,
 	getGainLossOfSharks,
 	getGainLossOfCoins,
