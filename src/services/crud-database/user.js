@@ -326,7 +326,7 @@ const getTransactionsLength = async (valueFilter = 0) => {
 	]);
 };
 
-const getTransactionsOfAllSharks1 = async (page, valueFilter = 0) => {
+const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
 	let transactions = await InvestorModel.find({
 		"transactionsHistory.500": { $exists: 0 },
 		isShark: 1
@@ -354,7 +354,7 @@ const getTransactionsOfAllSharks1 = async (page, valueFilter = 0) => {
 	return transactions;
 };
 
-const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
+const getTransactionsOfAllSharks1 = async (page, valueFilter = 0) => {
 	if (page < 1 || page % 1 !== 0) return [];
 
 	const transactions = await TransactionModel.aggregate([
@@ -426,9 +426,6 @@ const getDateNearTransaction = (dateList, dateTransaction) => {
 			if (Number(hourTrade) > Number(dateCutByDates[i].slice(8)))
 				return dateList[positionDate - datesCutLength + i + 1];
 		}
-
-		if(dateTransaction === '20220403072508')
-			console.log(datesCutLength);
 	}
 
 
@@ -444,13 +441,15 @@ const getDateNearTransaction = (dateList, dateTransaction) => {
 };
 
 // update
-const getListTransactionsOfShark1 = async (sharkId) => {
+const getListTransactionsOfShark = async (sharkId) => {
 	// if (!_.isNumber(sharkId)) return -1;
 	const rawData = await InvestorModel.find(
 		{ "transactionsHistory.500": { $exists: 0 }, isShark: 1 },
 		{ transactionsHistory: 1, sharkId: 1 }
-	).limit(1);
-
+	)
+	// .limit(50)
+	// .skip(2)
+	// "transactionsHistory.500": { $exists: 0 }, 
 	// return rawData[0].transactionsHistory;
 	console.log("done phase 1");
 
@@ -458,6 +457,7 @@ const getListTransactionsOfShark1 = async (sharkId) => {
 	// 	console.log(sharkIndex);
 	// }
 	await rawData.forEach(async (element) => {
+		console.log(element.sharkId);
 		let transactions = await element.transactionsHistory.map(
 			async (transaction) => {
 				let numberOfTokens =
@@ -503,10 +503,10 @@ const getListTransactionsOfShark1 = async (sharkId) => {
 						  )
 						: { date: "none", value: 0 };
 
-				if ((typeof hoursPrice !== "undefined") && dateNearTransaction.date === 'notfound') {
+				if (dateNearTransaction.date === 'notfound') {
 					// console.log(hoursPrice[0]);
 					// console.log(dateNearTransaction);
-					let dailyPrice = originalPrices.daily;
+					let dailyPrice = originalPrices.daily; 
 					dateNearTransaction = getPriceWithDaily(
 						dailyPrice,
 						dateTransac.toString()
@@ -514,8 +514,8 @@ const getListTransactionsOfShark1 = async (sharkId) => {
 					// console.log(dateNearTransaction);
 				}
 
-				// if(transaction['hash'] === '0xa46515d756825d6544339d25a590575b7195cab1d0aa797aaa0acb90a30b5220')
-				// console.log(dateTransac.toString());
+				if(transaction['hash'] === '0x0e1fff155f5d43c813e75095ec50f8dd41d0205a56867e17c6f6dd0a7bb21fd6')
+					console.log(dateNearTransaction);
 
 				let presentPrice =
 					typeof presentData === "undefined"
@@ -526,6 +526,7 @@ const getListTransactionsOfShark1 = async (sharkId) => {
 					typeof presentData === "undefined"
 						? 0
 						: presentData["date"];
+
 
 				Object.assign(transaction, {
 					numberOfTokens: numberOfTokens,
@@ -540,19 +541,10 @@ const getListTransactionsOfShark1 = async (sharkId) => {
 		);
 		transactions = await getValueFromPromise(transactions);
 		
-		// console.log(transactions[0]);
-
-		const x = await InvestorModel.updateOne(
+		await InvestorModel.updateOne( 
 			{ sharkId: element.sharkId },
 			{ transactionsHistory: transactions },
-		).exec((err, result) => {
-			// console.log("err:" + err + "\nresult: " + result);
-			if(err) {
-				console.log(typeof err[1]);
-			}
-			// console.log( transactions[0]);
-
-		});
+		);
 	});
 	console.log("done phase 2");
 
@@ -582,7 +574,7 @@ const getPriceWithDaily = (dailyPrice, dateTransaction) => {
 	return  { date: "none", value: 0 };
 };
 
-const getListTransactionsOfShark = async (sharkId) => {
+const getListTransactionsOfShark1 = async (sharkId) => {
 	const shark = await InvestorModel.findOne({ sharkId: sharkId }).select(
 		"transactionsHistory -_id"
 	);
