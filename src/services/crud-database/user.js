@@ -412,14 +412,14 @@ const getDateNearTransaction = (dateList, dateTransaction) => {
 	}
 
 	// cut date
-	if(positionDate === null){
+	if (positionDate === null) {
 		let dateCutByDates = datePricesTokenCut.filter((date, index) => {
 			date = date.slice(0, 8);
 			if (Number(date) === Number(dateTransactionCut.slice(0, 8)))
 				positionDate = index;
 			return Number(date) === Number(dateTransactionCut.slice(0, 8));
 		});
-	
+
 		let hourTrade = dateTransactionCut.slice(8);
 		let datesCutLength = dateCutByDates.length;
 		for (let i = 0; i < datesCutLength; i++) {
@@ -427,8 +427,6 @@ const getDateNearTransaction = (dateList, dateTransaction) => {
 				return dateList[positionDate - datesCutLength + i + 1];
 		}
 	}
-
-
 
 	return positionDate === null
 		? {
@@ -442,14 +440,15 @@ const getDateNearTransaction = (dateList, dateTransaction) => {
 
 // update
 const getListTransactionsOfShark = async (sharkId) => {
+
 	// if (!_.isNumber(sharkId)) return -1;
 	const rawData = await InvestorModel.find(
 		{ "transactionsHistory.500": { $exists: 0 }, isShark: 1 },
 		{ transactionsHistory: 1, sharkId: 1 }
-	)
+	);
 	// .limit(50)
 	// .skip(2)
-	// "transactionsHistory.500": { $exists: 0 }, 
+	// "transactionsHistory.500": { $exists: 0 },
 	// return rawData[0].transactionsHistory;
 	console.log("done phase 1");
 
@@ -462,7 +461,7 @@ const getListTransactionsOfShark = async (sharkId) => {
 			async (transaction) => {
 				let numberOfTokens =
 					Number(transaction["value"]) /
-					Math.pow(10, Number(transaction["tokenDecimal"]));
+					10 ** Number(transaction["tokenDecimal"]);
 
 				let originalPrices = await getOriginalPriceOfToken(
 					transaction["tokenSymbol"]
@@ -503,10 +502,10 @@ const getListTransactionsOfShark = async (sharkId) => {
 						  )
 						: { date: "none", value: 0 };
 
-				if (dateNearTransaction.date === 'notfound') {
+				if (dateNearTransaction.date === "notfound") {
 					// console.log(hoursPrice[0]);
 					// console.log(dateNearTransaction);
-					let dailyPrice = originalPrices.daily; 
+					let dailyPrice = originalPrices.daily;
 					dateNearTransaction = getPriceWithDaily(
 						dailyPrice,
 						dateTransac.toString()
@@ -514,7 +513,10 @@ const getListTransactionsOfShark = async (sharkId) => {
 					// console.log(dateNearTransaction);
 				}
 
-				if(transaction['hash'] === '0x0e1fff155f5d43c813e75095ec50f8dd41d0205a56867e17c6f6dd0a7bb21fd6')
+				if (
+					transaction["hash"] ===
+					"0x0e1fff155f5d43c813e75095ec50f8dd41d0205a56867e17c6f6dd0a7bb21fd6"
+				)
 					console.log(dateNearTransaction);
 
 				let presentPrice =
@@ -526,7 +528,6 @@ const getListTransactionsOfShark = async (sharkId) => {
 					typeof presentData === "undefined"
 						? 0
 						: presentData["date"];
-
 
 				Object.assign(transaction, {
 					numberOfTokens: numberOfTokens,
@@ -540,10 +541,10 @@ const getListTransactionsOfShark = async (sharkId) => {
 			}
 		);
 		transactions = await getValueFromPromise(transactions);
-		
-		await InvestorModel.updateOne( 
+
+		await InvestorModel.updateOne(
 			{ sharkId: element.sharkId },
-			{ transactionsHistory: transactions },
+			{ transactionsHistory: transactions }
 		);
 	});
 	console.log("done phase 2");
@@ -566,12 +567,15 @@ const getPriceWithDaily = (dailyPrice, dateTransaction) => {
 			(firstObj, secondObj) => secondObj["date"] - firstObj["date"]
 		);
 
-		const dateNearTransaction = getDateNearTransaction(dailyPrice, dateTransaction);
-			// console.log(dateNearTransaction);
-		return dateNearTransaction
+		const dateNearTransaction = getDateNearTransaction(
+			dailyPrice,
+			dateTransaction
+		);
+		// console.log(dateNearTransaction);
+		return dateNearTransaction;
 	}
-	
-	return  { date: "none", value: 0 };
+
+	return { date: "none", value: 0 };
 };
 
 const getListTransactionsOfShark1 = async (sharkId) => {
