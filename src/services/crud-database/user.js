@@ -437,10 +437,62 @@ const getDateNearTransaction = (dateList, dateTransaction) => {
 		? dateList[dateList.length - 1]
 		: dateList[positionDate + 1];
 };
-
-// update
+// update total in out
 const getListTransactionsOfShark = async (sharkId) => {
+	// if (!_.isNumber(sharkId)) return -1;
+	const rawData = await InvestorModel.find(
+		{ "transactionsHistory.500": { $exists: 0 }, isShark: 1 },
+		{ transactionsHistory: 1, sharkId: 1, walletAddress: 1 }
+	);
+	// .limit(50)
+	// .skip(2)
+	// "transactionsHistory.500": { $exists: 0 },
+	// return rawData[0].transactionsHistory;
+	console.log("done phase 1");
 
+	// for(let sharkIndex = 0; sharkIndex <= rawData.length; ++sharkIndex){
+	// 	console.log(sharkIndex);
+	// }
+	await rawData.forEach( async(element) => {
+		// console.log(element.sharkId);
+
+		let totalValueOut = 0;
+		let totalValueIn = await element.transactionsHistory.reduce(
+			(curr, transaction) => {
+				// console.log(curr);
+				// console.log(transaction.pastPrice); 
+				const passValue = transaction.pastPrice;
+				let tmp = curr;
+
+				if(element.walletAddress.toLowerCase() ===
+				transaction.from.toLowerCase())
+					tmp = curr + transaction.numberOfTokens * passValue;
+				else 
+					totalValueOut += transaction.numberOfTokens * passValue;
+
+				return tmp;
+			},
+			0
+		); 
+
+		if(element.sharkId === 7 || element.sharkId === 9){
+			console.log("totalValueIn " + totalValueIn);
+			console.log("totalValueOut " + totalValueOut);
+		}
+
+		// transactions = await getValueFromPromise(transactions);
+
+		// await InvestorModel.updateOne(
+		// 	{ sharkId: element.sharkId },
+		// 	{ transactionsHistory: transactions }
+		// );
+	});
+	console.log("done phase 2");
+
+	return 1;
+};
+// update
+const getListTransactionsOfShark11 = async (sharkId) => {
 	// if (!_.isNumber(sharkId)) return -1;
 	const rawData = await InvestorModel.find(
 		{ "transactionsHistory.500": { $exists: 0 }, isShark: 1 },
