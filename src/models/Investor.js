@@ -15,6 +15,14 @@ const InvestorSchema = new mongoose.Schema(
 			type: String,
 			default: "0"
 		},
+		totalValueIn: {
+			type: String,
+			default: "0"
+		},
+		totalValueOut: {
+			type: String,
+			default: "0"
+		},
 		percent24h: {
 			type: Number,
 			default: 0

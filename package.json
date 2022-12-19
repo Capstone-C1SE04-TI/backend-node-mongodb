@@ -18,6 +18,8 @@
 	"homepage": "https://github.com/Capstone-C1SE04-TI/backend-node-mongodb#readme",
 	"dependencies": {
 		"bcrypt": "^5.0.1",
+		"big.js": "^6.2.1",
+		"bignumber.js": "^9.1.1",
 		"cookie-parser": "^1.4.6",
 		"cors": "^2.8.5",
 		"dotenv": "^16.0.2",

@@ -11,6 +11,7 @@ const {
 } = require("../../constants");
 const { convertUnixTimestampToNumber } = require("../../helpers");
 const { log } = require("util");
+const BigNumber = require('bignumber.js');
 
 const getUserByUsername = async (username) => {
 	return await UserModel.findOne({ username: username });
@@ -456,23 +457,24 @@ const getListTransactionsOfShark = async (sharkId) => {
 	await rawData.forEach( async(element) => {
 		// console.log(element.sharkId);
 
-		let totalValueOut = 0;
-		let totalValueIn = await element.transactionsHistory.reduce(
+		let totalValueOut = new BigNumber(0);
+		let totalValueIn = new BigNumber(0);
+		totalValueIn = await element.transactionsHistory.reduce(
 			(curr, transaction) => {
 				// console.log(curr);
 				// console.log(transaction.pastPrice); 
-				const passValue = transaction.pastPrice;
+				const passValue = transaction.pastPrice === 0 ? 1 :transaction.pastPrice;
 				let tmp = curr;
 
 				if(element.walletAddress.toLowerCase() ===
 				transaction.from.toLowerCase())
-					tmp = curr + transaction.numberOfTokens * passValue;
+					tmp = tmp.plus(transaction.numberOfTokens * passValue)
 				else 
-					totalValueOut += transaction.numberOfTokens * passValue;
+					totalValueOut = totalValueOut.plus(transaction.numberOfTokens * passValue);
 
 				return tmp;
 			},
-			0
+			new BigNumber(0)
 		); 
 
 		if(element.sharkId === 7 || element.sharkId === 9){
@@ -482,10 +484,11 @@ const getListTransactionsOfShark = async (sharkId) => {
 
 		// transactions = await getValueFromPromise(transactions);
 
-		// await InvestorModel.updateOne(
-		// 	{ sharkId: element.sharkId },
-		// 	{ transactionsHistory: transactions }
-		// );
+		await InvestorModel.updateOne(
+			{ sharkId: element.sharkId },
+			{ totalValueIn: totalValueIn,
+				totalValueOut: totalValueOut}
+		);
 	});
 	console.log("done phase 2");
 
