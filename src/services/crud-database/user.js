@@ -482,8 +482,6 @@ const getListTransactionsOfShark = async (sharkId) => {
 			console.log("totalValueOut " + totalValueOut);
 		}
 
-		// transactions = await getValueFromPromise(transactions);
-
 		await InvestorModel.updateOne(
 			{ sharkId: element.sharkId },
 			{ totalValueIn: totalValueIn,
