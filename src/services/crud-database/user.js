@@ -373,10 +373,7 @@ const getTransactionsOfAllSharks = async (page, valueFilter = 0) => {
 };
 
 const getListTransactionsOfShark = async (sharkId) => {
-	const shark = await InvestorModel.findOne({ sharkId: sharkId }).select(
-		"transactionsHistory -_id"
-	);
-	return shark?.transactionsHistory || -1;
+	return (await TransactionModel.find({ sharkId: sharkId })) || -1;
 };
 
 const getTradeTransactionHistoryOfShark = async (sharkId, coinSymbol) => {
