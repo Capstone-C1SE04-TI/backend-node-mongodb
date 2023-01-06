@@ -17,7 +17,8 @@ const { cryptPassword, comparePassword } = require("../helpers");
 const {
 	isAuthed,
 	generateAccessToken,
-	generateRefreshAccessToken
+	generateRefreshAccessToken,
+	handleRefreshAccessToken
 } = require("../services/authentication");
 
 const TI_AUTH_COOKIE = process.env.TI_AUTH_COOKIE;
@@ -113,23 +114,33 @@ function AuthController() {
 								}
 							});
 						} else {
-							if (await isAuthed(req)) {
-								return res.status(200).json({
-									message: "successfully",
-									error: null,
-									user: {
-										role: "user",
-										username: user.username,
-										userId: user.userId,
-										email: user.email
-									}
-								});
-							} else {
-								return res.status(400).json({
-									message: "failed-unauthorized",
-									error: "failed-unauthorized",
-									user: null
-								});
+							const { message } = await isAuthed(req);
+
+							switch (message) {
+								case "failed-unauthorized": {
+									return res.status(200).json({
+										message: message,
+										error: message
+									});
+								}
+								case "failed-expired-token": {
+									return res.status(200).json({
+										message: message,
+										error: message
+									});
+								}
+								case "successfully": {
+									return res.status(200).json({
+										message: message,
+										error: null,
+										user: {
+											role: "user",
+											username: user.username,
+											userId: user.userId,
+											email: user.email
+										}
+									});
+								}
 							}
 						}
 					} else {
@@ -155,6 +166,36 @@ function AuthController() {
 				.json({ message: "successfully", error: null });
 		} catch (error) {
 			return res.status(400).json({ message: "failed", error: error });
+		}
+	};
+
+	this.refreshAccessToken = async (req, res, next) => {
+		try {
+			const { accessToken, refreshAccessToken } =
+				await handleRefreshAccessToken(req);
+
+			if (accessToken && refreshAccessToken) {
+				return res.status(200).json({
+					message: "successfully",
+					error: null,
+					newAccessToken: accessToken,
+					newRefreshAccessToken: refreshAccessToken
+				});
+			} else {
+				return res.status(400).json({
+					message: "failed",
+					error: error,
+					newAccessToken: null,
+					newRefreshAccessToken: null
+				});
+			}
+		} catch (error) {
+			return res.status(400).json({
+				message: "failed",
+				error: error,
+				newAccessToken: null,
+				newRefreshAccessToken: null
+			});
 		}
 	};
 }
