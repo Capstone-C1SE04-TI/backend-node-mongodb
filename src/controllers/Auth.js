@@ -87,8 +87,8 @@ function AuthController() {
 							});
 
 							res.cookie(TI_AUTH_COOKIE, accessToken, {
-								// Expire in 1 week
-								maxAge: 604800000
+								// Expire in 1 day
+								maxAge: 86400000
 							});
 
 							return res.status(200).json({
@@ -137,6 +137,7 @@ function AuthController() {
 		try {
 			req.user = null;
 			req.session = null;
+			res.clearCookie(TI_AUTH_COOKIE);
 
 			return res
 				.status(200)

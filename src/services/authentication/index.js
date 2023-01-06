@@ -14,7 +14,7 @@ const generateAccessToken = async (payloadData) => {
 	try {
 		const accessToken = await sign(payloadData, ACCESS_TOKEN_SECRET, {
 			algorithm: ENCODE_ALGORITHM,
-			expiresIn: "7d"
+			expiresIn: "1d"
 		});
 
 		return accessToken;
@@ -30,7 +30,7 @@ const generateRefreshAccessToken = async (payloadData) => {
 			REFRESH_ACCESS_TOKEN_SECRET,
 			{
 				algorithm: ENCODE_ALGORITHM,
-				expiresIn: "7d"
+				expiresIn: "1d"
 			}
 		);
 

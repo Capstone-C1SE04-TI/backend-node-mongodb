@@ -72,6 +72,14 @@ const UserSchema = new mongoose.Schema(
 		addedSharks: {
 			type: Array,
 			default: []
+		},
+		accessToken: {
+			type: String,
+			trim: true
+		},
+		refreshAccessToken: {
+			type: String,
+			trim: true
 		}
 	},
 	{ timestamps: true, versionKey: false }
