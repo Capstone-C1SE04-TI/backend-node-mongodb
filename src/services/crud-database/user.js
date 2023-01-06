@@ -546,31 +546,66 @@ const deleteSharkNotFound = async (walletAddress, userId) => {
 };
 
 const getLengthOfSharksList = async () => {
-	try{
-		const length = await InvestorModel.count({isShark: true});
-		return {message: "success", length: length};
-	}catch(err){
-		return {message: "failed-get-length", error: err};
+	try {
+		const length = await InvestorModel.count({ isShark: true });
+		return { message: "success", length: length };
+	} catch (err) {
+		return { message: "failed-get-length", error: err };
 	}
-}
+};
 
 const getLengthOfUsersList = async () => {
-	try{
+	try {
 		const length = await UserModel.count({});
-		return {message: "success", length: length};
-	}catch(err){
-		return {message: "failed-get-length", error: err};
+		return { message: "success", length: length };
+	} catch (err) {
+		return { message: "failed-get-length", error: err };
 	}
-}
+};
 
 const getLengthOfTransactionsList = async () => {
-	try{
+	try {
 		const length = await TransactionModel.count({});
-		return {message: "success", length: length};
-	}catch(err){
-		return {message: "failed-get-length", error: err};
+		return { message: "success", length: length };
+	} catch (err) {
+		return { message: "failed-get-length", error: err };
 	}
-}
+};
+
+const getUserAccessTokens = async (username) => {
+	return await UserModel.findOne({ username: username })
+		.select("accessToken refreshAccessToken -_id")
+		.lean();
+};
+
+const saveAccessTokensToDB = async (
+	username,
+	accessToken,
+	refreshAccessToken
+) => {
+	try {
+		await UserModel.findOneAndUpdate(
+			{ username: username },
+			{
+				$set: {
+					accessToken: accessToken,
+					refreshAccessToken: refreshAccessToken
+				}
+			}
+		)
+			.lean()
+			.then((data) => {
+				if (!data) throw new Error();
+			})
+			.catch((error) => {
+				throw new Error(error);
+			});
+
+		return { message: "success" };
+	} catch (err) {
+		return { message: "failed" };
+	}
+};
 
 module.exports = {
 	getUserByUsername,
@@ -611,5 +646,6 @@ module.exports = {
 	getLengthOfSharksList,
 	getLengthOfUsersList,
 	getLengthOfTransactionsList,
-
+	getUserAccessTokens,
+	saveAccessTokensToDB
 };

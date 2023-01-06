@@ -10,10 +10,15 @@ const {
 	checkExistedUsername,
 	checkExistedEmail,
 	getPasswordByUsername,
-	getUserByUsername
+	getUserByUsername,
+	saveAccessTokensToDB
 } = require("../services/crud-database/user");
 const { cryptPassword, comparePassword } = require("../helpers");
-const { isAuthed, generateAccessToken } = require("../services/authentication");
+const {
+	isAuthed,
+	generateAccessToken,
+	generateRefreshAccessToken
+} = require("../services/authentication");
 
 const TI_AUTH_COOKIE = process.env.TI_AUTH_COOKIE;
 
@@ -79,17 +84,21 @@ function AuthController() {
 				async (error, isPasswordMatch) => {
 					if (isPasswordMatch) {
 						const user = await getUserByUsername(username);
-						const cookie = req.cookies[TI_AUTH_COOKIE];
 
-						if (!cookie) {
+						if (!user.accessToken) {
 							const accessToken = await generateAccessToken({
 								username
 							});
+							const refreshAccessToken =
+								await generateRefreshAccessToken({
+									username
+								});
 
-							res.cookie(TI_AUTH_COOKIE, accessToken, {
-								// Expire in 1 day
-								maxAge: 86400000
-							});
+							await saveAccessTokensToDB(
+								username,
+								accessToken,
+								refreshAccessToken
+							);
 
 							return res.status(200).json({
 								message: "successfully",
@@ -98,7 +107,9 @@ function AuthController() {
 									role: "user",
 									username: user.username,
 									userId: user.userId,
-									email: user.email
+									email: user.email,
+									accessToken: accessToken,
+									refreshAccessToken: refreshAccessToken
 								}
 							});
 						} else {
